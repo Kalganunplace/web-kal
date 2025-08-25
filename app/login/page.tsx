@@ -2,144 +2,300 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { TextButton } from "@/components/ui/text-button"
+import { Input } from "@/components/ui/input"
+import { CaptionMedium } from "@/components/ui/typography"
+import { supabase } from "@/lib/auth/supabase"
+import { useAuth } from "@/stores/auth-store"
 import { ChevronLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+
+type LoginStep = "phone" | "verification"
 
 export default function LoginPage() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
+  const { signIn } = useAuth()
+  const [step, setStep] = useState<LoginStep>("phone")
+  const [loading, setLoading] = useState(false)
+  const [phone, setPhone] = useState("")
+  const [verificationCode, setVerificationCode] = useState("")
+  const [error, setError] = useState("")
+  const [timer, setTimer] = useState(180) // 3분
+  const [canResend, setCanResend] = useState(false)
 
-  const handleSocialLogin = async (provider: "kakao" | "naver") => {
-    setIsLoading(true)
+  // 타이머 관리
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null
+    if (step === "verification" && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => {
+          if (prev <= 1) {
+            setCanResend(true)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [step, timer])
 
-    // 소셜 로그인 로직 시뮬레이션
-    setTimeout(() => {
-      alert(`${provider === "kakao" ? "카카오" : "네이버"} 로그인 처리 중...`)
-      setIsLoading(false)
-      router.push("/")
-    }, 1500)
+  const handleSendVerification = async () => {
+    if (!phone.trim()) {
+      setError("전화번호를 입력해주세요.")
+      return
+    }
+
+    setLoading(true)
+    setError("")
+
+    try {
+      const response = await supabase.sendVerificationCode(phone)
+
+      if (response.success) {
+        setStep("verification")
+        setTimer(180)
+        setCanResend(false)
+      } else {
+        setError(response.error || "인증번호 발송에 실패했습니다.")
+      }
+    } catch (err) {
+      setError("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
+    } finally {
+      setLoading(false)
+    }
   }
 
+  const handleVerifyAndLogin = async () => {
+    if (!verificationCode.trim()) {
+      setError("인증번호를 입력해주세요.")
+      return
+    }
+
+    setLoading(true)
+    setError("")
+
+    try {
+      const result = await signIn(phone, verificationCode)
+
+      if (result.success) {
+        router.push("/")
+      } else {
+        setError(result.error || "로그인에 실패했습니다.")
+      }
+    } catch (err) {
+      setError("로그인 처리 중 오류가 발생했습니다.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResendCode = async () => {
+    if (!canResend) return
+
+    setLoading(true)
+    setError("")
+
+    try {
+      const response = await supabase.sendVerificationCode(phone)
+
+      if (response.success) {
+        setTimer(180)
+        setCanResend(false)
+        setVerificationCode("")
+      } else {
+        setError(response.error || "인증번호 재발송에 실패했습니다.")
+      }
+    } catch (err) {
+      setError("서버 오류가 발생했습니다.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
+
+  if (step === "phone") {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <div className="max-w-[500px] mx-auto bg-white min-h-screen flex flex-col">
+          {/* Header */}
+          <div className="flex items-center p-4 border-b">
+            <button onClick={() => router.back()} className="p-2 -ml-2">
+              <ChevronLeft size={24} />
+            </button>
+            <h1 className="text-lg font-bold ml-2">로그인</h1>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 flex flex-col justify-center p-6 space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold text-gray-900">
+                칼가는곳에 오신 것을
+              </h2>
+              <h2 className="text-2xl font-bold text-gray-900">
+                환영합니다! 🔪
+              </h2>
+              <p className="text-gray-600 mt-4">
+                전화번호로 간편하게 로그인하세요
+              </p>
+            </div>
+
+            <Card className="border-0 shadow-none">
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">전화번호</label>
+                  <Input
+                    type="tel"
+                    placeholder="010-1234-5678"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    disabled={loading}
+                    className="text-lg h-12"
+                  />
+                </div>
+
+                {error && (
+                  <div className="text-red-500 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleSendVerification}
+                  disabled={loading || !phone.trim()}
+                  className="w-full h-12 text-lg bg-[#E67E22] hover:bg-[#D35400]"
+                >
+                  {loading ? "처리 중..." : "인증번호 발송"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* 게스트 이용 */}
+            <div className="text-center pt-4">
+              <button
+                onClick={() => router.push("/")}
+                className="text-orange-500 hover:text-orange-600 font-medium"
+              >
+                로그인 없이 둘러보기
+              </button>
+            </div>
+
+            {/* 회원가입 링크 */}
+            <div className="text-center">
+              <span className="text-gray-600">계정이 없으신가요? </span>
+              <button
+                onClick={() => router.push("/signup")}
+                className="text-orange-500 hover:text-orange-600 font-medium"
+              >
+                회원가입
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 인증번호 입력 단계
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-[500px] mx-auto bg-white min-h-screen flex flex-col">
         {/* Header */}
         <div className="flex items-center p-4 border-b">
-          <button onClick={() => router.back()} className="p-2 -ml-2">
-            <ChevronLeft className="w-6 h-6" />
+          <button onClick={() => setStep("phone")} className="p-2 -ml-2">
+            <ChevronLeft size={24} />
           </button>
-          <h1 className="text-lg font-bold ml-2">로그인</h1>
+          <h1 className="text-lg font-bold ml-2">인증번호 입력</h1>
         </div>
 
         {/* Content */}
         <div className="flex-1 flex flex-col justify-center p-6 space-y-6">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-gray-900">
-              칼가는곳에 오신 것을
+            <h2 className="text-xl font-bold text-gray-900">
+              인증번호를 입력해주세요
             </h2>
-            <h2 className="text-2xl font-bold text-gray-900">
-              환영합니다! 🔪
-            </h2>
-            <p className="text-gray-600 mt-4">
-              전문 장인이 직접 연마하는 칼갈이 서비스
+            <p className="text-gray-600">
+              <span className="font-medium text-orange-500">{phone}</span>으로<br />
+              발송된 인증번호를 입력해주세요
             </p>
           </div>
 
           <Card className="border-0 shadow-none">
             <CardContent className="p-6 space-y-4">
-              {/* 소셜 로그인 버튼들 */}
-              <Button
-                variant="kakao"
-                size="lg"
-                onClick={() => handleSocialLogin("kakao")}
-                disabled={isLoading}
-                className="w-full"
-              >
-                카카오 로그인
-              </Button>
-
-              <Button
-                variant="naver"
-                size="lg"
-                onClick={() => handleSocialLogin("naver")}
-                disabled={isLoading}
-                className="w-full"
-              >
-                네이버 로그인
-              </Button>
-
-              <div className="flex items-center my-6">
-                <Separator className="flex-1" />
-                <span className="px-3 text-sm text-gray-500">또는</span>
-                <Separator className="flex-1" />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">인증번호</label>
+                <Input
+                  type="text"
+                  placeholder="6자리 숫자 입력"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                  disabled={loading}
+                  className="text-lg h-12 text-center tracking-widest"
+                  maxLength={6}
+                />
               </div>
 
-              {/* 기타 로그인 옵션 */}
-              <div className="space-y-3">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => alert("이메일 로그인 기능 준비 중")}
-                  className="w-full"
+              {/* 타이머 및 재발송 */}
+              <div className="flex items-center justify-between text-sm">
+                <div className="text-gray-600">
+                  {timer > 0 ? (
+                    <span>남은 시간: <span className="text-orange-500 font-medium">{formatTime(timer)}</span></span>
+                  ) : (
+                    <span className="text-red-500">인증시간이 만료되었습니다</span>
+                  )}
+                </div>
+                <button
+                  onClick={handleResendCode}
+                  disabled={!canResend || loading}
+                  className={`font-medium ${
+                    canResend && !loading
+                      ? "text-orange-500 hover:text-orange-600"
+                      : "text-gray-400 cursor-not-allowed"
+                  }`}
                 >
-                  이메일로 로그인
-                </Button>
+                  재발송
+                </button>
+              </div>
 
-                <Button
-                  variant="white"
-                  size="lg"
-                  onClick={() => alert("전화번호 로그인 기능 준비 중")}
-                  className="w-full"
+              {error && (
+                <div className="text-red-500 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <Button
+                onClick={handleVerifyAndLogin}
+                disabled={loading || !verificationCode.trim() || verificationCode.length !== 6}
+                className="w-full h-12 text-lg bg-[#E67E22] hover:bg-[#D35400]"
+              >
+                {loading ? "처리 중..." : "로그인"}
+              </Button>
+
+              {/* 전화번호 변경 */}
+              <div className="text-center">
+                <CaptionMedium color="#666666">전화번호가 틀렸나요?</CaptionMedium>
+                <button
+                  onClick={() => {
+                    setStep("phone")
+                    setError("")
+                    setVerificationCode("")
+                    setTimer(180)
+                    setCanResend(false)
+                  }}
+                  className="text-orange-500 hover:text-orange-600 font-medium ml-2"
                 >
-                  전화번호로 로그인
-                </Button>
+                  번호 변경
+                </button>
               </div>
             </CardContent>
           </Card>
-
-          {/* 하단 링크들 */}
-          <div className="flex justify-center space-x-4 text-center">
-            <TextButton
-              size="14"
-              weight="regular"
-              onClick={() => alert("회원가입 페이지로 이동")}
-              className="text-gray-600 hover:text-orange-500"
-            >
-              회원가입
-            </TextButton>
-            <span className="text-gray-300">|</span>
-            <TextButton
-              size="14"
-              weight="regular"
-              onClick={() => alert("비밀번호 찾기 페이지로 이동")}
-              className="text-gray-600 hover:text-orange-500"
-            >
-              비밀번호 찾기
-            </TextButton>
-          </div>
-
-          {/* 게스트 이용 */}
-          <div className="text-center pt-4">
-            <TextButton
-              size="16"
-              weight="bold"
-              onClick={() => router.push("/")}
-              className="text-orange-500 hover:text-orange-600"
-            >
-              로그인 없이 둘러보기
-            </TextButton>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-6 text-center">
-          <p className="text-xs text-gray-500">
-            로그인하시면 <TextButton size="12" weight="bold" className="text-gray-700 hover:text-orange-500">이용약관</TextButton> 및{" "}
-            <TextButton size="12" weight="bold" className="text-gray-700 hover:text-orange-500">개인정보처리방침</TextButton>에 동의하는 것으로 간주됩니다.
-          </p>
         </div>
       </div>
     </div>

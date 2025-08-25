@@ -4,12 +4,15 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeftIcon, CameraIcon, LocationIcon, PlusIcon } from "@/components/ui/icon"
 import { Switch } from "@/components/ui/switch"
 import { BodyLarge, BodyMedium, BodySmall, CaptionMedium, Heading1, Heading2 } from "@/components/ui/typography"
+import { AuthAware, AuthenticatedOnly } from "@/components/auth/auth-aware"
+import { useAuthAware } from "@/hooks/use-auth-aware"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 export default function KnifeRequestPage() {
   const router = useRouter()
+  const { user, isAuthenticated, executeWithAuth } = useAuthAware()
   const [isPickupService, setIsPickupService] = useState(false)
 
   return (
@@ -144,20 +147,47 @@ export default function KnifeRequestPage() {
           </div>
         </div>
 
-        {/* Submit Button */}
+        {/* Submit Button - 인증 상태에 따른 처리 */}
         <div className="pb-8">
           <Button
             variant="primary"
             size="lg"
             className="w-full h-14 bg-[#E67E22] hover:bg-[#D35400] text-white font-bold rounded-xl"
             onClick={() => {
-              // Handle submission
-              alert("칼갈이 신청이 완료되었습니다!")
-              router.push("/")
+              executeWithAuth(
+                // 로그인된 사용자: 바로 신청 처리
+                () => {
+                  alert("칼갈이 신청이 완료되었습니다!")
+                  router.push("/usage-history")
+                },
+                // 게스트 사용자: 로그인 후 결제 진행
+                () => {
+                  const shouldLogin = confirm(
+                    "결제를 위해 로그인이 필요합니다. 로그인하시겠습니까?"
+                  )
+                  if (shouldLogin) {
+                    router.push("/login?redirect=/knife-request")
+                  }
+                },
+                "결제 진행을 위해 로그인이 필요합니다."
+              )
             }}
           >
-            칼갈이 신청하기
+            <AuthAware fallback="로그인 후 신청하기">
+              칼갈이 신청하기
+            </AuthAware>
           </Button>
+          
+          {/* 게스트 사용자용 안내 */}
+          <AuthenticatedOnly
+            fallback={
+              <div className="mt-3 text-center">
+                <CaptionMedium color="#666666">
+                  로그인하시면 더 편리하게 이용하실 수 있습니다
+                </CaptionMedium>
+              </div>
+            }
+          />
         </div>
       </div>
     </>

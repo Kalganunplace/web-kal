@@ -3,14 +3,21 @@
 import { Button } from "@/components/ui/button"
 import { CircleWonIcon, PlusIcon } from "@/components/ui/icon"
 import { BodySmall, CaptionSmall } from "@/components/ui/typography"
+import { useAuthAware } from "@/hooks/use-auth-aware"
+import { AuthAware } from "@/components/auth/auth-aware"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 
 export default function HomePage() {
   const router = useRouter()
+  const { user, navigateWithAuth } = useAuthAware()
 
   const handleKnifeRequest = () => {
-    router.push("/knife-request")
+    navigateWithAuth(
+      "/knife-request", 
+      "/knife-request", // 게스트도 접근 가능
+      false // 로그인 강제하지 않음
+    )
   }
 
   const handlePriceList = () => {
@@ -52,17 +59,28 @@ export default function HomePage() {
             />
           </div>
 
-          {/* Banner Text */}
+          {/* Banner Text - 로그인 여부에 따른 개인화 */}
           <div className="absolute left-6 top-1/3 z-10">
-            <div
-              className="text-white text-2xl leading-relaxed"
-              style={{ fontFamily: 'Do Hyeon', fontWeight: 400 }}
+            <AuthAware
+              fallback={
+                <div
+                  className="text-white text-2xl leading-relaxed"
+                  style={{ fontFamily: 'Do Hyeon', fontWeight: 400 }}
+                >
+                  더이상 칼로<br />으깨지 마세요.<br />썰어야죠...
+                </div>
+              }
             >
-              더이상 칼로<br />으깨지 마세요.<br />썰어야죠...
-            </div>
+              <div
+                className="text-white text-2xl leading-relaxed"
+                style={{ fontFamily: 'Do Hyeon', fontWeight: 400 }}
+              >
+                {user?.name}님,<br />오늘도 칼갈이<br />어떠세요?
+              </div>
+            </AuthAware>
           </div>
 
-          {/* CTA Button */}
+          {/* CTA Button - 인증 상태에 따른 텍스트 변경 */}
           <Button
             variant="white"
             size="md"
@@ -70,7 +88,9 @@ export default function HomePage() {
             className="w-4/5 bg-[#F2F2F2] rounded-md shadow-lg flex justify-center items-center px-4 py-6 z-10"
           >
             <span className="text-[#E67E22] text-base font-extrabold leading-none">
-              첫 칼갈이 신청하기
+              <AuthAware fallback="첫 칼갈이 신청하기">
+                칼갈이 신청하기
+              </AuthAware>
             </span>
           </Button>
         </div>

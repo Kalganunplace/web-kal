@@ -5,7 +5,9 @@ import { ChevronRightIcon } from "@/components/ui/icon"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, BodySmall, CaptionLarge } from "@/components/ui/typography"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { supabase } from "@/lib/auth/supabase"
+import { useAuth } from "@/stores/auth-store"
 
 type Step = "form" | "verification" | "terms"
 type FormField = "name" | "phone" | "verification"
@@ -35,6 +37,7 @@ interface TermsState {
 
 export default function SignupPage() {
   const router = useRouter()
+  const { signUp } = useAuth()
 
   const [step, setStep] = useState<Step>("form")
   const [focusedField, setFocusedField] = useState<FormField | null>(null)
@@ -65,6 +68,8 @@ export default function SignupPage() {
   })
   const [verificationTimer, setVerificationTimer] = useState(180) // 3분
   const [canResendVerification, setCanResendVerification] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [verificationSent, setVerificationSent] = useState(false)
 
   // 입력 값 변경 핸들러
   const handleInputChange = (field: FormField, value: string) => {
@@ -109,23 +114,41 @@ export default function SignupPage() {
   }
 
   // 인증번호 전송
-  const handleSendVerification = () => {
+  const handleSendVerification = async () => {
     if (validation.name === "valid" && validation.phone === "valid") {
-      setStep("verification")
-      setVerificationTimer(180)
-      setCanResendVerification(false)
+      setLoading(true)
+      
+      try {
+        const cleanPhone = formData.phone.replace(/-/g, '')
+        const response = await supabase.sendVerificationCode(cleanPhone, formData.name)
+        
+        if (response.success) {
+          setStep("verification")
+          setVerificationTimer(180)
+          setCanResendVerification(false)
+          setVerificationSent(true)
 
-      // 타이머 시작
-      const timer = setInterval(() => {
-        setVerificationTimer(prev => {
-          if (prev <= 1) {
-            clearInterval(timer)
-            setCanResendVerification(true)
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
+          // 타이머 시작
+          const timer = setInterval(() => {
+            setVerificationTimer(prev => {
+              if (prev <= 1) {
+                clearInterval(timer)
+                setCanResendVerification(true)
+                return 0
+              }
+              return prev - 1
+            })
+          }, 1000)
+        } else {
+          setErrors(prev => ({ ...prev, phone: response.error || "인증번호 전송에 실패했습니다." }))
+          setValidation(prev => ({ ...prev, phone: "invalid" }))
+        }
+      } catch (error) {
+        setErrors(prev => ({ ...prev, phone: "네트워크 오류가 발생했습니다." }))
+        setValidation(prev => ({ ...prev, phone: "invalid" }))
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -164,12 +187,28 @@ export default function SignupPage() {
   }
 
   // 회원가입 완료
-  const handleSignupComplete = () => {
+  const handleSignupComplete = async () => {
     const requiredTerms = terms.service && terms.privacy && terms.location && terms.identity
-    if (requiredTerms) {
-      // 회원가입 완료 후 홈으로 이동
-      setShowTerms(false)
-      router.push("/")
+    if (requiredTerms && validation.verification === "valid") {
+      setLoading(true)
+      
+      try {
+        const cleanPhone = formData.phone.replace(/-/g, '')
+        const result = await signUp(cleanPhone, formData.name, formData.verification)
+        
+        if (result.success) {
+          setShowTerms(false)
+          router.push("/") // 홈으로 이동
+        } else {
+          setErrors(prev => ({ ...prev, verification: result.error || "회원가입에 실패했습니다." }))
+          setValidation(prev => ({ ...prev, verification: "invalid" }))
+        }
+      } catch (error) {
+        setErrors(prev => ({ ...prev, verification: "회원가입 처리 중 오류가 발생했습니다." }))
+        setValidation(prev => ({ ...prev, verification: "invalid" }))
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -276,14 +315,14 @@ export default function SignupPage() {
         {step === "form" && (
           <button
             onClick={handleSendVerification}
-            disabled={!isVerificationButtonEnabled}
+            disabled={!isVerificationButtonEnabled || loading}
             className={`w-full h-14 rounded-lg font-bold text-lg ${
-              isVerificationButtonEnabled
+              isVerificationButtonEnabled && !loading
                 ? "bg-[#E67E22] text-white shadow-[0px_5px_30px_0px_rgba(0,0,0,0.1)]"
                 : "bg-[#B0B0B0] text-white"
             }`}
           >
-            인증번호 받기
+            {loading ? "인증번호 발송 중..." : "인증번호 받기"}
           </button>
         )}
 
@@ -394,14 +433,14 @@ export default function SignupPage() {
           {/* 확인 버튼 */}
           <button
             onClick={handleSignupComplete}
-            disabled={!isConfirmButtonEnabled}
+            disabled={!isConfirmButtonEnabled || loading}
             className={`w-full h-12 rounded-md font-bold text-base ${
-              isConfirmButtonEnabled
+              isConfirmButtonEnabled && !loading
                 ? "bg-[#E67E22] text-white shadow-[0px_5px_30px_0px_rgba(0,0,0,0.1)]"
                 : "bg-[#B0B0B0] text-white"
             }`}
           >
-            확인
+            {loading ? "회원가입 중..." : "확인"}
           </button>
         </div>
       </BottomSheet>

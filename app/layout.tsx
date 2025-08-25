@@ -25,9 +25,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${inter.className} ${nanumGothic.variable}`}>
-          <LayoutProvider>
-            {children}
-          </LayoutProvider>
+        <LayoutProvider>
+          {children}
+        </LayoutProvider>
       </body>
     </html>
   )
