@@ -1,0 +1,69 @@
+"use client"
+
+import BottomNavigation from '@/components/bottom-navigation'
+import { usePathname } from 'next/navigation'
+import React, { createContext, ReactNode, useContext, useState } from 'react'
+
+// Layout context
+interface LayoutContextType {
+  showNavigation: boolean
+  setShowNavigation: (show: boolean) => void
+  hasNotification: boolean
+  setHasNotification: (has: boolean) => void
+}
+
+const LayoutContext = createContext<LayoutContextType | undefined>(undefined)
+
+export const useLayout = () => {
+  const context = useContext(LayoutContext)
+  if (!context) {
+    throw new Error('useLayout must be used within a LayoutProvider')
+  }
+  return context
+}
+
+// Layout provider component
+interface LayoutProviderProps {
+  children: ReactNode
+}
+
+export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
+  const pathname = usePathname()
+  const [hasNotification, setHasNotification] = useState(true)
+
+  // Determine which pages should show navigation
+  const mainPages = ['/', '/profile', '/notifications', '/usage-history']
+  const shouldShowNavigation = mainPages.includes(pathname)
+
+  const [showNavigation, setShowNavigation] = useState(shouldShowNavigation)
+
+  // Auto-update navigation visibility based on route
+  React.useEffect(() => {
+    setShowNavigation(shouldShowNavigation)
+  }, [shouldShowNavigation])
+
+  return (
+    <LayoutContext.Provider
+      value={{
+        showNavigation,
+        setShowNavigation,
+        hasNotification,
+        setHasNotification,
+      }}
+    >
+      <div className="min-h-screen bg-white">
+        <div className="max-w-[500px] mx-auto bg-white min-h-screen flex flex-col shadow-lg relative">
+          {/* Main content */}
+          <div className="flex-1">
+            {children}
+          </div>
+
+          {/* Bottom Navigation - only show on main pages */}
+          {showNavigation && (
+            <BottomNavigation hasNotification={hasNotification} />
+          )}
+        </div>
+      </div>
+    </LayoutContext.Provider>
+  )
+}
