@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { AuthUser, supabase } from '@/lib/auth/supabase'
+import { useMemo } from 'react'
 
 interface AuthState {
   // State
@@ -74,8 +75,24 @@ export const useAuthStore = create<AuthState>()(
       // Sign out
       signOut: () => {
         set({ user: null })
-        // 쿠키도 삭제
-        document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT'
+        
+        // 모든 인증 관련 쿠키 삭제
+        if (typeof document !== 'undefined') {
+          // auth-token 쿠키 삭제
+          document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT'
+          
+          // 모든 Supabase 관련 쿠키 삭제
+          const cookies = document.cookie.split(';')
+          cookies.forEach(cookie => {
+            const [name] = cookie.trim().split('=')
+            if (name.includes('sb-') && name.includes('auth-token')) {
+              document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT`
+              // 도메인별로도 삭제 시도
+              document.cookie = `${name}=; path=/; domain=localhost; expires=Thu, 01 Jan 1970 00:00:01 GMT`
+              document.cookie = `${name}=; path=/; domain=.localhost; expires=Thu, 01 Jan 1970 00:00:01 GMT`
+            }
+          })
+        }
       },
       
       // Internal state setters
@@ -89,26 +106,26 @@ export const useAuthStore = create<AuthState>()(
       // Only persist user data, not loading state
       partialize: (state) => ({ user: state.user }),
       // Rehydrate callback
-      onRehydrateStorage: () => (state) => {
-        return new Promise<void>((resolve) => {
-          setTimeout(() => {
-            // Rehydration 완료 후 상태 업데이트
-            if (state) {
-              state.setLoading(false)
-              state.setHydrated(true) // 초기화 완료 표시
-              
-              // 쿠키와 localStorage 동기화 확인
-              if (state.user && typeof document !== 'undefined') {
-                const cookieExists = document.cookie.includes('auth-token=')
-                if (!cookieExists) {
-                  // 쿠키가 없으면 다시 설정
-                  document.cookie = `auth-token=${state.user.id}; path=/; max-age=${60 * 60 * 24 * 7}`
-                }
-              }
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Auth rehydration error:', error)
+          return
+        }
+        
+        if (state) {
+          console.log('Auth rehydration completed:', state.user)
+          state.setLoading(false)
+          state.setHydrated(true)
+          
+          // 쿠키와 localStorage 동기화 확인
+          if (state.user && typeof document !== 'undefined') {
+            const cookieExists = document.cookie.includes('auth-token=')
+            if (!cookieExists) {
+              // 쿠키가 없으면 다시 설정
+              document.cookie = `auth-token=${state.user.id}; path=/; max-age=${60 * 60 * 24 * 7}`
             }
-            resolve()
-          }, 100) // 약간의 지연을 주어 확실한 초기화
-        })
+          }
+        }
       },
     }
   )
@@ -123,18 +140,26 @@ export const useAuth = () => {
   const signUp = useAuthStore((state) => state.signUp)
   const signOut = useAuthStore((state) => state.signOut)
   
-  return { user, loading, hydrated, signIn, signUp, signOut }
+  return useMemo(() => ({ 
+    user, loading, hydrated, signIn, signUp, signOut 
+  }), [user, loading, hydrated, signIn, signUp, signOut])
 }
 
 // Individual selectors for even better performance
 export const useAuthUser = () => useAuthStore((state) => state.user)
 export const useAuthLoading = () => useAuthStore((state) => state.loading)
 export const useAuthHydrated = () => useAuthStore((state) => state.hydrated)
-export const useAuthActions = () => useAuthStore((state) => ({
-  signIn: state.signIn,
-  signUp: state.signUp,
-  signOut: state.signOut,
-}))
+export const useAuthActions = () => {
+  const signIn = useAuthStore((state) => state.signIn)
+  const signUp = useAuthStore((state) => state.signUp) 
+  const signOut = useAuthStore((state) => state.signOut)
+  
+  return useMemo(() => ({
+    signIn,
+    signUp,
+    signOut,
+  }), [signIn, signUp, signOut])
+}
 
 // Helper function for auth guards
 export const useIsAuthenticated = () => {
@@ -142,10 +167,10 @@ export const useIsAuthenticated = () => {
   const loading = useAuthStore((state) => state.loading)
   const hydrated = useAuthStore((state) => state.hydrated)
   
-  return {
+  return useMemo(() => ({
     isAuthenticated: !!user,
     isLoading: loading || !hydrated,
     user,
     hydrated,
-  }
+  }), [user, loading, hydrated])
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import BottomNavigation from '@/components/bottom-navigation'
+import { useAuthStore } from '@/stores/auth-store'
 import { usePathname } from 'next/navigation'
 import React, { createContext, ReactNode, useContext, useState } from 'react'
 
@@ -30,6 +31,13 @@ interface LayoutProviderProps {
 export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   const pathname = usePathname()
   const [hasNotification, setHasNotification] = useState(true)
+  const initialize = useAuthStore((state) => state.initialize)
+
+  // Initialize auth store
+  React.useEffect(() => {
+    initialize()
+  }, [initialize])
+
 
   // Determine which pages should show navigation
   const mainPages = ['/', '/profile', '/notifications', '/usage-history']
@@ -54,7 +62,7 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
       <div className="min-h-screen bg-white">
         <div className="max-w-[500px] mx-auto bg-white min-h-screen flex flex-col shadow-lg relative">
           {/* Main content */}
-          <div className="flex-1">
+          <div className={`flex-1 ${showNavigation ? 'pb-[80px]' : ''}`}>
             {children}
           </div>
 

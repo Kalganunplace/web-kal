@@ -3,6 +3,14 @@
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { BodyMedium, Heading2 } from '@/components/ui/typography'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { useAuthHydration } from '@/hooks/use-auth-hydration'
 
 interface LoginPromptProps {
   title?: string
@@ -90,6 +98,115 @@ export function LoginPromptModal({
         />
       </div>
     </div>
+  )
+}
+
+/**
+ * 바텀시트 형태의 로그인 프롬프트
+ * 로그인 상태에 따라 다른 메시지를 표시
+ */
+export function LoginBottomSheet({
+  isOpen,
+  onClose,
+  title,
+  message,
+  actionText,
+  requireAuth = true, // 인증이 필요한 기능인지 여부
+}: LoginPromptProps & {
+  isOpen: boolean
+  onClose: () => void
+  requireAuth?: boolean
+}) {
+  const router = useRouter()
+  const { isAuthenticated, isReady, user } = useAuthHydration()
+
+  const handleLogin = () => {
+    const currentPath = window.location.pathname
+    router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
+    onClose()
+  }
+
+  const handleSignup = () => {
+    const currentPath = window.location.pathname
+    router.push(`/signup?redirect=${encodeURIComponent(currentPath)}`)
+    onClose()
+  }
+
+  if (!isReady) {
+    return null
+  }
+
+  // 로그인된 사용자일 때의 메시지
+  if (isAuthenticated && user) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent side="bottom" className="max-w-[500px] mx-auto">
+          <SheetHeader className="text-center pb-4">
+            <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+              <span className="text-2xl">✅</span>
+            </div>
+            <SheetTitle className="text-xl font-bold">
+              안녕하세요, {user.name}님! 👋
+            </SheetTitle>
+            <SheetDescription className="text-gray-600 leading-relaxed">
+              로그인이 완료되어 모든 기능을 이용하실 수 있습니다.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="flex flex-col gap-3 pt-4">
+            <Button
+              onClick={onClose}
+              className="w-full h-12 bg-[#E67E22] hover:bg-[#D35400] text-white font-bold rounded-xl"
+            >
+              확인
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  // 로그인되지 않은 사용자일 때의 메시지
+  return (
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent side="bottom" className="max-w-[500px] mx-auto">
+        <SheetHeader className="text-center pb-4">
+          <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+            <span className="text-2xl">🛡️</span>
+          </div>
+          <SheetTitle className="text-xl font-bold">
+            {title || "로그인이 필요해요"}
+          </SheetTitle>
+          <SheetDescription className="text-gray-600 leading-relaxed">
+            {message || "이 기능을 사용하려면 로그인이 필요합니다."}
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="flex flex-col gap-3 pt-4">
+          <Button
+            onClick={handleLogin}
+            className="w-full h-12 bg-[#E67E22] hover:bg-[#D35400] text-white font-bold rounded-xl"
+          >
+            {actionText || "로그인하기"}
+          </Button>
+          
+          <Button
+            onClick={handleSignup}
+            variant="outline"
+            className="w-full h-12 border-orange-200 text-orange-600 hover:bg-orange-50 font-bold rounded-xl"
+          >
+            회원가입하기
+          </Button>
+
+          <button
+            onClick={onClose}
+            className="w-full py-3 text-gray-500 hover:text-gray-700 font-medium transition-colors"
+          >
+            나중에 하기
+          </button>
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }
 

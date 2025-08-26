@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { CaptionMedium } from "@/components/ui/typography"
 import { supabase } from "@/lib/auth/supabase"
 import { useAuth } from "@/stores/auth-store"
+import { useAuthHydration } from "@/hooks/use-auth-hydration"
 import { ChevronLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -15,6 +16,7 @@ type LoginStep = "phone" | "verification"
 export default function LoginPage() {
   const router = useRouter()
   const { signIn } = useAuth()
+  const { isAuthenticated, isReady } = useAuthHydration()
   const [step, setStep] = useState<LoginStep>("phone")
   const [loading, setLoading] = useState(false)
   const [phone, setPhone] = useState("")
@@ -22,6 +24,17 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [timer, setTimer] = useState(180) // 3분
   const [canResend, setCanResend] = useState(false)
+  
+  // URL에서 redirect 파라미터 가져오기 (LoginPrompt와 일관성 유지)
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const returnUrl = searchParams?.get('redirect') || searchParams?.get('returnUrl') || '/'
+
+  // 이미 로그인된 사용자는 리디렉션
+  useEffect(() => {
+    if (isReady && isAuthenticated) {
+      router.replace(returnUrl)
+    }
+  }, [isReady, isAuthenticated, returnUrl, router])
 
   // 타이머 관리
   useEffect(() => {
@@ -81,7 +94,7 @@ export default function LoginPage() {
       const result = await signIn(phone, verificationCode)
 
       if (result.success) {
-        router.push("/")
+        router.push(returnUrl)
       } else {
         setError(result.error || "로그인에 실패했습니다.")
       }
@@ -119,6 +132,18 @@ export default function LoginPage() {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
+
+  // 로딩 중이거나 이미 인증된 사용자는 로딩 표시
+  if (!isReady) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    )
   }
 
   if (step === "phone") {
