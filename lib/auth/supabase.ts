@@ -8,6 +8,14 @@ export interface AuthUser {
   created_at?: string
 }
 
+export interface UserProfile extends AuthUser {
+  couponCount: number
+  subscriptionStatus: 'none' | 'active' | 'expired'
+  notificationEnabled: boolean
+  totalServices: number
+  memberGrade: 'bronze' | 'silver' | 'gold' | 'platinum'
+}
+
 interface AuthResponse {
   success: boolean
   data?: AuthUser
@@ -232,6 +240,35 @@ class SupabaseAuthClient {
     } catch (error) {
       console.error('로그인 오류:', error)
       return { success: false, error: '로그인 처리 중 오류가 발생했습니다.' }
+    }
+  }
+
+  async getUserProfile(userId: string): Promise<{ success: boolean; data?: UserProfile; error?: string }> {
+    try {
+      // 실제로는 데이터베이스에서 조회하지만, 현재는 mock 데이터 반환
+      const mockProfiles: Record<string, UserProfile> = {
+        [userId]: {
+          id: userId,
+          phone: '01012345678',
+          name: '김칼날',
+          created_at: '2024-01-15T00:00:00Z',
+          couponCount: 3,
+          subscriptionStatus: 'active',
+          notificationEnabled: true,
+          totalServices: 12,
+          memberGrade: 'gold'
+        }
+      }
+
+      const profile = mockProfiles[userId]
+      if (!profile) {
+        return { success: false, error: '사용자 프로필을 찾을 수 없습니다.' }
+      }
+
+      return { success: true, data: profile }
+    } catch (error) {
+      console.error('프로필 조회 오류:', error)
+      return { success: false, error: '프로필 조회 중 오류가 발생했습니다.' }
     }
   }
 }

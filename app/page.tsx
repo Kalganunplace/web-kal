@@ -5,12 +5,21 @@ import { CircleWonIcon, PlusIcon } from "@/components/ui/icon"
 import { BodySmall, CaptionSmall } from "@/components/ui/typography"
 import { useAuthAware } from "@/hooks/use-auth-aware"
 import { AuthAware } from "@/components/auth/auth-aware"
+import { LoginBottomSheet } from "@/components/auth/login-prompt"
+import { useAuthHydration } from "@/hooks/use-auth-hydration"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 export default function HomePage() {
   const router = useRouter()
   const { user, navigateWithAuth } = useAuthAware()
+  const { user: authUser, loading } = useAuthHydration()
+  const [showLoginSheet, setShowLoginSheet] = useState(false)
+  const [loginSheetConfig, setLoginSheetConfig] = useState({
+    title: "로그인이 필요해요",
+    message: "이 기능을 사용하려면 로그인이 필요합니다."
+  })
 
   const handleKnifeRequest = () => {
     navigateWithAuth(
@@ -26,6 +35,30 @@ export default function HomePage() {
 
   const handleGuide = () => {
     router.push("/guide")
+  }
+
+  const handleEvent = () => {
+    if (!loading && !authUser) {
+      setLoginSheetConfig({
+        title: "이벤트 참여하기",
+        message: "신규고객 전용 1+1 이벤트에 참여하려면 로그인이 필요합니다."
+      })
+      setShowLoginSheet(true)
+      return
+    }
+    router.push("/events/new-customer")
+  }
+
+  const handleSubscription = () => {
+    if (!loading && !authUser) {
+      setLoginSheetConfig({
+        title: "구독 서비스 신청하기",
+        message: "구독 서비스를 이용하려면 로그인이 필요합니다."
+      })
+      setShowLoginSheet(true)
+      return
+    }
+    router.push("/subscription")
   }
 
   return (
@@ -125,7 +158,10 @@ export default function HomePage() {
         {/* Sub Banners */}
         <div className="w-full space-y-5">
           {/* Event Banner */}
-          <div className="w-full aspect-[33/12] bg-gradient-to-br from-[#E67E22] to-[#FF8E63] rounded-3xl shadow-md relative overflow-hidden flex flex-col justify-center items-center">
+          <button
+            onClick={handleEvent}
+            className="w-full aspect-[33/12] bg-gradient-to-br from-[#E67E22] to-[#FF8E63] rounded-3xl shadow-md relative overflow-hidden flex flex-col justify-center items-center hover:scale-[1.02] transition-transform"
+          >
             {/* Content */}
             <div className="flex flex-col justify-center items-center gap-2 z-10">
               {/* Event Title */}
@@ -178,10 +214,13 @@ export default function HomePage() {
                 2025.03~2025.12
               </CaptionSmall>
             </div>
-          </div>
+          </button>
 
           {/* Subscription Banner */}
-          <div className="w-full aspect-[33/12] bg-[#FAF3E0] rounded-3xl shadow-md relative overflow-hidden">
+          <button
+            onClick={handleSubscription}
+            className="w-full aspect-[33/12] bg-[#FAF3E0] rounded-3xl shadow-md relative overflow-hidden hover:scale-[1.02] transition-transform"
+          >
             {/* Background decorative elements */}
             <div className="absolute top-3/4 right-1/4 w-8 h-1 bg-black/40 rounded-full blur-sm" />
             <div className="absolute top-4/5 right-1/5 w-8 h-1 bg-black/40 rounded-full blur-sm" />
@@ -203,12 +242,20 @@ export default function HomePage() {
               <div className="w-1.5 h-1.5 bg-[#767676] rounded-full" />
               <div className="w-1.5 h-1.5 bg-[#B0B0B0] rounded-full" />
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Spacer for bottom navigation */}
         <div className="h-20" />
       </div>
+
+      {/* 로그인 바텀시트 */}
+      <LoginBottomSheet
+        isOpen={showLoginSheet}
+        onClose={() => setShowLoginSheet(false)}
+        title={loginSheetConfig.title}
+        message={loginSheetConfig.message}
+      />
     </>
   )
 }

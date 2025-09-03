@@ -1,7 +1,10 @@
 "use client"
 
 import { HomeIcon, NotificationBadgeIcon, NotificationIcon, ProfileIcon, ReceiptIcon } from '@/components/ui/icon'
+import { LoginBottomSheet } from '@/components/auth/login-prompt'
+import { useAuthHydration } from '@/hooks/use-auth-hydration'
 import { usePathname, useRouter } from "next/navigation"
+import { useState } from "react"
 
 interface BottomNavigationProps {
   hasNotification?: boolean
@@ -10,6 +13,12 @@ interface BottomNavigationProps {
 export default function BottomNavigation({ hasNotification = false }: BottomNavigationProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const { user, loading } = useAuthHydration()
+  const [showLoginSheet, setShowLoginSheet] = useState(false)
+  const [loginSheetConfig, setLoginSheetConfig] = useState({
+    title: "로그인이 필요해요",
+    message: "이 기능을 사용하려면 로그인이 필요합니다."
+  })
 
   const navItems = [
     { icon: "home", label: "홈", path: "/" },
@@ -17,6 +26,39 @@ export default function BottomNavigation({ hasNotification = false }: BottomNavi
     { icon: "receipt", label: "이용내역", path: "/usage-history" },
     { icon: "profile", label: "내정보", path: "/profile" },
   ]
+
+  const handleNavClick = (item: typeof navItems[0]) => {
+    // 로그인이 필요한 탭들 체크
+    const authRequiredPaths = ["/profile", "/notifications", "/usage-history"]
+    
+    if (authRequiredPaths.includes(item.path)) {
+      if (!loading && !user) {
+        // 각 탭별로 다른 메시지 설정
+        let title = "로그인이 필요해요"
+        let message = "이 기능을 사용하려면 로그인이 필요합니다."
+        
+        switch (item.path) {
+          case "/profile":
+            title = "내정보 확인하기"
+            message = "프로필 정보를 보려면 로그인이 필요합니다."
+            break
+          case "/notifications":
+            title = "알림 확인하기"
+            message = "개인 알림을 확인하려면 로그인이 필요합니다."
+            break
+          case "/usage-history":
+            title = "이용내역 확인하기"
+            message = "주문 내역을 보려면 로그인이 필요합니다."
+            break
+        }
+        
+        setLoginSheetConfig({ title, message })
+        setShowLoginSheet(true)
+        return
+      }
+    }
+    router.push(item.path)
+  }
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 max-w-[500px] mx-auto">
@@ -28,7 +70,7 @@ export default function BottomNavigation({ hasNotification = false }: BottomNavi
             return (
               <button
                 key={item.path}
-                onClick={() => router.push(item.path)}
+                onClick={() => handleNavClick(item)}
                 className="flex flex-col items-center py-1 relative"
                 style={{ width: "36px", height: "40px" }}
               >
@@ -86,6 +128,14 @@ export default function BottomNavigation({ hasNotification = false }: BottomNavi
           })}
         </div>
       </div>
+
+      {/* 로그인 바텀시트 */}
+      <LoginBottomSheet
+        isOpen={showLoginSheet}
+        onClose={() => setShowLoginSheet(false)}
+        title={loginSheetConfig.title}
+        message={loginSheetConfig.message}
+      />
     </div>
   )
 }
