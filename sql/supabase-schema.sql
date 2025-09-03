@@ -313,6 +313,12 @@ DROP POLICY IF EXISTS "서비스 롤만 접근 가능" ON verification_codes;
 CREATE POLICY "anon_can_manage_verification_codes" ON verification_codes
   FOR ALL USING (true);
 
--- users 테이블도 anon이 insert 가능하도록 추가
+-- users 테이블 anon 접근 정책
 CREATE POLICY "anon_can_insert_users" ON users
   FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "anon_can_select_users" ON users
+  FOR SELECT USING (true);
+
+CREATE POLICY "anon_can_update_users" ON users  
+  FOR UPDATE USING (true);

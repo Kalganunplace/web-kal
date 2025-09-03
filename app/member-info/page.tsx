@@ -1,52 +1,92 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, BodySmall, CaptionMedium } from "@/components/ui/typography"
+import { useAuthHydration } from "@/hooks/use-auth-hydration"
+import { supabase, AuthUser } from "@/lib/auth/supabase"
 
 export default function MemberInfoPage() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuthHydration()
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [dataLoading, setDataLoading] = useState(true)
   
   // 회원 정보 상태
-  const [memberInfo, setMemberInfo] = useState({
-    name: "칼가는곳",
-    phone: "01000000000"
-  })
+  const [memberInfo, setMemberInfo] = useState<AuthUser | null>(null)
 
   // 수정 중인 정보 상태
   const [editInfo, setEditInfo] = useState({
-    name: memberInfo.name,
-    phone: memberInfo.phone
+    name: "",
+    phone: ""
   })
 
+  // 사용자 정보 로드
+  useEffect(() => {
+    if (user && !authLoading) {
+      setMemberInfo(user)
+      setEditInfo({
+        name: user.name,
+        phone: user.phone
+      })
+      setDataLoading(false)
+    } else if (!authLoading && !user) {
+      // 로그인하지 않은 경우 홈으로 리다이렉트
+      router.push('/')
+    }
+  }, [user, authLoading, router])
+
   const handleSave = async () => {
+    if (!memberInfo?.id) return
+
     setLoading(true)
     
     try {
-      // API 호출 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // 정보 업데이트
-      setMemberInfo(editInfo)
-      setIsEditing(false)
+      const result = await supabase.updateUserInfo(
+        memberInfo.id,
+        editInfo.name,
+        editInfo.phone
+      )
+
+      if (result.success && result.data) {
+        // 정보 업데이트 성공
+        setMemberInfo(result.data)
+        setIsEditing(false)
+        alert('회원 정보가 성공적으로 수정되었습니다.')
+      } else {
+        // 오류 처리
+        alert(result.error || '정보 수정에 실패했습니다.')
+        // 에러시 원래 값으로 복원
+        setEditInfo({
+          name: memberInfo.name,
+          phone: memberInfo.phone
+        })
+      }
     } catch (error) {
       console.error("정보 수정 중 오류 발생:", error)
+      alert('정보 수정 중 오류가 발생했습니다.')
+      // 에러시 원래 값으로 복원
+      setEditInfo({
+        name: memberInfo.name,
+        phone: memberInfo.phone
+      })
     } finally {
       setLoading(false)
     }
   }
 
   const handleCancel = () => {
-    setEditInfo({
-      name: memberInfo.name,
-      phone: memberInfo.phone
-    })
+    if (memberInfo) {
+      setEditInfo({
+        name: memberInfo.name,
+        phone: memberInfo.phone
+      })
+    }
     setIsEditing(false)
   }
 
@@ -56,6 +96,24 @@ export default function MemberInfoPage() {
       alert("회원탈퇴가 처리되었습니다.")
       router.push("/")
     }
+  }
+
+  // 로딩 중이거나 사용자 정보가 없는 경우
+  if (authLoading || dataLoading || !memberInfo) {
+    return (
+      <>
+        <TopBanner
+          title="회원 정보"
+          onBackClick={() => router.back()}
+        />
+        <div className="flex-1 flex items-center justify-center px-5 py-20 bg-gray-50">
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 border-4 border-gray-200 border-t-gray-400 rounded-full animate-spin mb-4"></div>
+            <BodyMedium color="#666666">회원 정보를 불러오는 중...</BodyMedium>
+          </div>
+        </div>
+      </>
+    )
   }
 
   return (

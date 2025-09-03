@@ -1,5 +1,18 @@
-// 실제 Supabase 클라이언트 구현
-import { createClient } from '@supabase/supabase-js'
+// 실제 Supabase 클라이언트 구현 - Lazy Loading
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+// Lazy loading을 위한 동적 import
+let supabaseClientInstance: SupabaseClient<Database> | null = null
+
+async function getSupabaseClient(): Promise<SupabaseClient<Database>> {
+  if (!supabaseClientInstance) {
+    const { createClient } = await import('@supabase/supabase-js')
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    supabaseClientInstance = createClient<Database>(supabaseUrl, supabaseKey)
+  }
+  return supabaseClientInstance
+}
 
 export interface AuthUser {
   id: string
@@ -81,11 +94,6 @@ interface Database {
   }
 }
 
-// Supabase 클라이언트 초기화
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-const supabaseClient = createClient<Database>(supabaseUrl, supabaseKey)
 
 class SupabaseAuthClient {
   private generateVerificationCode(): string {
@@ -112,7 +120,8 @@ class SupabaseAuthClient {
 
     try {
       // 데이터베이스 함수를 통해 인증번호 생성
-      const { data, error } = await supabaseClient.rpc('generate_verification_code', {
+      const client = await getSupabaseClient()
+      const { data, error } = await client.rpc('generate_verification_code', {
         p_phone: formattedPhone,
         p_type: 'phone_verification'
       })
@@ -136,7 +145,8 @@ class SupabaseAuthClient {
     const formattedPhone = this.formatPhone(phone)
     
     try {
-      const { data, error } = await supabaseClient.rpc('verify_code', {
+      const client = await getSupabaseClient()
+      const { data, error } = await client.rpc('verify_code', {
         p_phone: formattedPhone,
         p_code: code,
         p_type: 'phone_verification'
@@ -169,7 +179,8 @@ class SupabaseAuthClient {
 
     try {
       // 기존 사용자 확인
-      const { data: existingUser } = await supabaseClient
+      const client = await getSupabaseClient()
+      const { data: existingUser } = await client
         .from('users')
         .select('*')
         .eq('phone', formattedPhone)
@@ -180,7 +191,7 @@ class SupabaseAuthClient {
       }
 
       // 새 사용자 생성
-      const { data: newUser, error } = await supabaseClient
+      const { data: newUser, error } = await client
         .from('users')
         .insert({
           phone: formattedPhone,
@@ -219,7 +230,8 @@ class SupabaseAuthClient {
 
     try {
       // 사용자 조회
-      const { data: user, error } = await supabaseClient
+      const client = await getSupabaseClient()
+      const { data: user, error } = await client
         .from('users')
         .select('*')
         .eq('phone', formattedPhone)
@@ -245,32 +257,141 @@ class SupabaseAuthClient {
 
   async getUserProfile(userId: string): Promise<{ success: boolean; data?: UserProfile; error?: string }> {
     try {
-      // 실제로는 데이터베이스에서 조회하지만, 현재는 mock 데이터 반환
-      const mockProfiles: Record<string, UserProfile> = {
-        [userId]: {
-          id: userId,
-          phone: '01012345678',
-          name: '김칼날',
-          created_at: '2024-01-15T00:00:00Z',
-          couponCount: 3,
-          subscriptionStatus: 'active',
-          notificationEnabled: true,
-          totalServices: 12,
-          memberGrade: 'gold'
+      // 실제 데이터베이스에서 사용자 프로필 조회
+      const { data: userData, error: userError } = await this.supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (userError) {
+        console.error('사용자 조회 오류:', userError)
+        return { success: false, error: '사용자 정보를 찾을 수 없습니다.' }
+      }
+
+      // 사용자 프로필 정보 조회
+      const { data: profileData, error: profileError } = await this.supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (profileError) {
+        // 프로필이 없으면 기본값으로 생성
+        const { data: newProfile, error: createError } = await this.supabase
+          .from('user_profiles')
+          .insert([{
+            id: userId,
+            coupon_count: 0,
+            subscription_status: 'none',
+            notification_enabled: true,
+            total_services: 0,
+            member_grade: 'bronze'
+          }])
+          .select('*')
+          .single()
+
+        if (createError) {
+          console.error('프로필 생성 오류:', createError)
+          return { success: false, error: '프로필 생성 중 오류가 발생했습니다.' }
+        }
+
+        return {
+          success: true,
+          data: {
+            id: userId,
+            phone: userData.phone,
+            name: userData.name,
+            created_at: userData.created_at,
+            couponCount: newProfile?.coupon_count || 0,
+            subscriptionStatus: newProfile?.subscription_status || 'none',
+            notificationEnabled: newProfile?.notification_enabled || true,
+            totalServices: newProfile?.total_services || 0,
+            memberGrade: newProfile?.member_grade || 'bronze'
+          }
         }
       }
 
-      const profile = mockProfiles[userId]
-      if (!profile) {
-        return { success: false, error: '사용자 프로필을 찾을 수 없습니다.' }
+      // 기존 프로필 데이터 반환
+      return {
+        success: true,
+        data: {
+          id: userId,
+          phone: userData.phone,
+          name: userData.name,
+          created_at: userData.created_at,
+          couponCount: profileData.coupon_count || 0,
+          subscriptionStatus: profileData.subscription_status || 'none',
+          notificationEnabled: profileData.notification_enabled || true,
+          totalServices: profileData.total_services || 0,
+          memberGrade: profileData.member_grade || 'bronze'
+        }
       }
-
-      return { success: true, data: profile }
     } catch (error) {
       console.error('프로필 조회 오류:', error)
       return { success: false, error: '프로필 조회 중 오류가 발생했습니다.' }
     }
   }
+
+  async updateUserInfo(userId: string, name: string, phone: string): Promise<{ success: boolean; data?: AuthUser; error?: string }> {
+    const formattedPhone = this.formatPhone(phone)
+    
+    if (!this.isValidPhone(formattedPhone)) {
+      return { success: false, error: '올바른 전화번호 형식이 아닙니다.' }
+    }
+
+    try {
+      // 다른 사용자가 같은 전화번호를 사용하는지 확인
+      const client = await getSupabaseClient()
+      const { data: existingUser } = await client
+        .from('users')
+        .select('id')
+        .eq('phone', formattedPhone)
+        .neq('id', userId)
+        .single()
+
+      if (existingUser) {
+        return { success: false, error: '이미 사용 중인 전화번호입니다.' }
+      }
+
+      // 사용자 정보 업데이트
+      const { data: updatedUser, error } = await client
+        .from('users')
+        .update({
+          name: name.trim(),
+          phone: formattedPhone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('사용자 정보 업데이트 오류:', error)
+        return { success: false, error: '정보 수정에 실패했습니다.' }
+      }
+
+      const authUser: AuthUser = {
+        id: updatedUser.id,
+        phone: updatedUser.phone,
+        name: updatedUser.name,
+        created_at: updatedUser.created_at
+      }
+
+      return { success: true, data: authUser }
+    } catch (error) {
+      console.error('정보 수정 오류:', error)
+      return { success: false, error: '정보 수정 처리 중 오류가 발생했습니다.' }
+    }
+  }
 }
 
 export const supabase = new SupabaseAuthClient()
+
+// Supabase 클라이언트 생성 함수 export
+export function createClient() {
+  const { createClient: createSupabaseClient } = require('@supabase/supabase-js')
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  return createSupabaseClient(supabaseUrl, supabaseKey)
+}

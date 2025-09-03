@@ -4,10 +4,14 @@ import BottomSheet from "@/components/ui/bottom-sheet"
 import { ChevronRightIcon } from "@/components/ui/icon"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, BodySmall, CaptionLarge } from "@/components/ui/typography"
+import AddressSearchBottomSheet from "@/components/address-search-bottom-sheet"
+import { Button } from "@/components/ui/button"
+import { MapPin } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/auth/supabase"
 import { useAuth } from "@/stores/auth-store"
+import type { AddressData } from "@/hooks/useAddressSearch"
 
 type Step = "form" | "verification" | "terms"
 type FormField = "name" | "phone" | "verification"
@@ -17,6 +21,7 @@ interface FormData {
   name: string
   phone: string
   verification: string
+  address: string
 }
 
 interface FormErrors {
@@ -44,8 +49,10 @@ export default function SignupPage() {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     phone: "",
-    verification: ""
+    verification: "",
+    address: ""
   })
+  const [showAddressSheet, setShowAddressSheet] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({
     name: "",
     phone: "",
@@ -224,6 +231,15 @@ export default function SignupPage() {
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
+  // 주소 선택 핸들러
+  const handleAddressSelect = (addressData: AddressData) => {
+    setFormData(prev => ({
+      ...prev,
+      address: addressData.address
+    }))
+    setShowAddressSheet(false)
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-white relative">
       {/* TopBanner */}
@@ -279,6 +295,27 @@ export default function SignupPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* 주소 선택 */}
+        <div className="flex flex-col gap-2">
+          <BodyMedium color="#333333">서비스 지역을 선택해 주세요</BodyMedium>
+          <Button
+            onClick={() => setShowAddressSheet(true)}
+            variant="outline"
+            className={`w-full h-12 px-5 rounded-[10px] border-2 text-left justify-start ${
+              formData.address 
+                ? "border-[#E67E22] bg-white text-[#333333]" 
+                : "border-[#D9D9D9] bg-white text-[#B0B0B0]"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <MapPin className="w-5 h-5" />
+              <span className="text-sm font-bold">
+                {formData.address || "주소를 선택해주세요"}
+              </span>
+            </div>
+          </Button>
         </div>
 
         {/* 인증번호 입력 (verification 단계에서만 표시) */}
@@ -444,6 +481,17 @@ export default function SignupPage() {
           </button>
         </div>
       </BottomSheet>
+
+      {/* 주소 검색 바텀시트 */}
+      <AddressSearchBottomSheet
+        isOpen={showAddressSheet}
+        onClose={() => setShowAddressSheet(false)}
+        onAddressSelect={handleAddressSelect}
+        showAddressName={false}
+        showDetailAddress={false}
+        placeholder="서비스 지역을 검색해주세요"
+        title="서비스 지역 선택"
+      />
     </div>
   )
 }

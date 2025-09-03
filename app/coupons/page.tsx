@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, BodySmall, CaptionMedium, Heading2, Heading3 } from "@/components/ui/typography"
 import { Skeleton } from "@/components/ui/skeleton"
+import { createClient } from "@/lib/auth/supabase"
+import { useAuthAware } from "@/hooks/use-auth-aware"
 
 interface Coupon {
   id: string
@@ -20,36 +22,68 @@ interface Coupon {
 
 export default function CouponsPage() {
   const router = useRouter()
+  const { user, isAuthenticated } = useAuthAware()
   const [loading, setLoading] = useState(true)
   const [coupons, setCoupons] = useState<Coupon[]>([])
+  const supabase = createClient()
 
   useEffect(() => {
-    // 쿠폰 데이터 로딩 시뮬레이션
     const loadCoupons = async () => {
       setLoading(true)
       
-      // 2초 로딩 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      if (!isAuthenticated || !user) {
+        setLoading(false)
+        return
+      }
       
-      const mockCoupons: Coupon[] = [
-        {
-          id: "1",
-          title: "신규 유저 1+1 웰컴 쿠폰",
-          description: "[웰컴 쿠폰] 1차로 연마시 한차례 무료",
-          validUntil: "2025.07.06 11시59분까지",
-          isUsed: false,
-          category: "신규",
-          discountType: "1+1",
-          remainingDays: 30
+      try {
+        // 실제 DB에서 사용자 쿠폰 조회
+        const { data, error } = await supabase
+          .from('coupons')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error('쿠폰 조회 오류:', error)
+          return
         }
-      ]
-      
-      setCoupons(mockCoupons)
-      setLoading(false)
+
+        // DB 데이터를 Coupon 형태로 변환
+        const formattedCoupons: Coupon[] = data?.map(coupon => {
+          const expiresAt = coupon.expires_at ? new Date(coupon.expires_at) : null
+          const remainingDays = expiresAt ? Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0
+          
+          return {
+            id: coupon.id,
+            title: coupon.title,
+            description: coupon.description || '',
+            validUntil: expiresAt ? expiresAt.toLocaleDateString('ko-KR', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            }).replace(/\. /g, '.') + '까지' : '무제한',
+            isUsed: coupon.status === 'used',
+            category: coupon.coupon_type === 'free_service' ? '신규' : 
+                     coupon.coupon_type === 'discount' ? '할인' : '일반',
+            discountType: coupon.coupon_type === 'free_service' ? '1+1' :
+                         coupon.discount_percent ? '할인' : '무료',
+            remainingDays
+          }
+        }) || []
+        
+        setCoupons(formattedCoupons)
+      } catch (error) {
+        console.error('쿠폰 로드 실패:', error)
+      } finally {
+        setLoading(false)
+      }
     }
 
     loadCoupons()
-  }, [])
+  }, [isAuthenticated, user])
 
   const availableCoupons = coupons.filter(coupon => !coupon.isUsed)
   const usedCoupons = coupons.filter(coupon => coupon.isUsed)

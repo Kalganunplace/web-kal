@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, BodySmall, CaptionMedium, Heading3 } from "@/components/ui/typography"
+import { createClient } from "@/lib/auth/supabase"
 
 interface Notice {
   id: string
@@ -19,51 +20,45 @@ export default function NoticesPage() {
   const [loading, setLoading] = useState(true)
   const [notices, setNotices] = useState<Notice[]>([])
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null)
+  const supabase = createClient()
 
   useEffect(() => {
     const loadNotices = async () => {
       setLoading(true)
       
-      // 로딩 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      const mockNotices: Notice[] = [
-        {
-          id: "1",
-          title: "서비스 이용 안내",
-          content: "안녕하세요, 칼가는곳 서비스를 이용해주셔서 감사합니다.\n\n서비스 이용 시 다음 사항을 확인해주세요:\n\n1. 칼갈이 서비스는 대구 지역 내에서만 제공됩니다.\n2. 서비스 예약은 최소 1일 전에 해주셔야 합니다.\n3. 칼의 상태에 따라 작업 시간이 달라질 수 있습니다.\n\n궁금한 사항이 있으시면 고객센터로 문의해주세요.",
-          date: "2024.03.15",
-          isNew: true,
-          isImportant: true
-        },
-        {
-          id: "2", 
-          title: "3월 이벤트 안내",
-          content: "3월 한정 특별 이벤트를 진행합니다!\n\n신규 회원 가입 시 첫 서비스 30% 할인 쿠폰을 드립니다.\n친구 추천 시 추가 10% 할인 혜택까지!\n\n이벤트 기간: 2024.03.01 ~ 2024.03.31\n\n많은 참여 부탁드립니다.",
-          date: "2024.03.10",
-          isNew: false,
-          isImportant: false
-        },
-        {
-          id: "3",
-          title: "서비스 지역 확대 안내",
-          content: "칼가는곳 서비스 지역이 확대됩니다!\n\n기존 대구 중구에서 대구 전 지역으로 서비스가 확대되었습니다.\n\n새로 추가된 지역:\n- 대구 동구\n- 대구 서구  \n- 대구 남구\n- 대구 북구\n\n더 많은 고객분들께 편리한 서비스를 제공하겠습니다.",
-          date: "2024.03.05",
-          isNew: false,
-          isImportant: false
-        },
-        {
-          id: "4",
-          title: "개인정보 처리방침 변경 안내",
-          content: "개인정보 처리방침이 일부 변경되었습니다.\n\n주요 변경사항:\n- 개인정보 보유기간 명시\n- 마케팅 정보 수신 동의 절차 개선\n- 개인정보 수집 목적 구체화\n\n자세한 내용은 앱 설정 > 개인정보 처리방침에서 확인하실 수 있습니다.",
-          date: "2024.02.28",
-          isNew: false,
-          isImportant: false
+      try {
+        // 실제 DB에서 공지사항 조회
+        const { data, error } = await supabase
+          .from('announcements')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error('공지사항 조회 오류:', error)
+          return
         }
-      ]
-      
-      setNotices(mockNotices)
-      setLoading(false)
+
+        // DB 데이터를 Notice 형태로 변환
+        const formattedNotices: Notice[] = data?.map(announcement => ({
+          id: announcement.id,
+          title: announcement.title,
+          content: announcement.content,
+          date: new Date(announcement.created_at).toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          }).replace(/\. /g, '.'),
+          isNew: new Date(announcement.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7일 이내는 New
+          isImportant: announcement.is_important || false
+        })) || []
+        
+        setNotices(formattedNotices)
+      } catch (error) {
+        console.error('공지사항 로드 실패:', error)
+      } finally {
+        setLoading(false)
+      }
     }
 
     loadNotices()
