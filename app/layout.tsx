@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import { LayoutProvider } from "@/components/common/layout-provider"
+import { QueryProvider } from "@/lib/providers/query-provider"
 
 export const metadata: Metadata = {
   title: "칼가는곳 - 칼갈이 서비스",
@@ -15,9 +16,11 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="antialiased">
-        <LayoutProvider>
-          {children}
-        </LayoutProvider>
+        <QueryProvider>
+          <LayoutProvider>
+            {children}
+          </LayoutProvider>
+        </QueryProvider>
       </body>
     </html>
   )

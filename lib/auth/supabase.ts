@@ -4,11 +4,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 // Lazy loading을 위한 동적 import
 let supabaseClientInstance: SupabaseClient<Database> | null = null
 
-async function getSupabaseClient(): Promise<SupabaseClient<Database>> {
+export async function getSupabaseClient(): Promise<SupabaseClient<Database>> {
   if (!supabaseClientInstance) {
     const { createClient } = await import('@supabase/supabase-js')
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hrsqcroirtzbdoeheyxy.supabase.co'
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhyc3Fjcm9pcnR6YmRvZWhleXh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNjEyNjUsImV4cCI6MjA2NjkzNzI2NX0.hoVI2aI4rJncvo_9w5ZTNTqtsdjWEdCnxzsvBAb7-cw'
     supabaseClientInstance = createClient<Database>(supabaseUrl, supabaseKey)
   }
   return supabaseClientInstance
@@ -113,7 +113,7 @@ class SupabaseAuthClient {
 
   async sendVerificationCode(phone: string): Promise<{ success: boolean; error?: string }> {
     const formattedPhone = this.formatPhone(phone)
-    
+
     if (!this.isValidPhone(formattedPhone)) {
       return { success: false, error: '올바른 전화번호 형식이 아닙니다.' }
     }
@@ -131,9 +131,18 @@ class SupabaseAuthClient {
         return { success: false, error: '인증번호 생성에 실패했습니다.' }
       }
 
-      // 실제로는 SMS 서비스를 통해 발송 (나중에 Twilio 연결)
-      console.log(`[SMS] ${formattedPhone}로 인증번호 발송: ${data}`)
+      // SMS 서비스를 통해 발송
+      const { SMSService } = await import('@/lib/sms/sms-service')
+      const smsSent = await SMSService.sendVerificationCode(formattedPhone, data)
       
+      if (!smsSent) {
+        console.error('SMS 발송 실패')
+        // 개발 환경에서는 콘솔에도 출력
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[DEV] 인증번호: ${data}`)
+        }
+      }
+
       return { success: true }
     } catch (error) {
       console.error('SMS 발송 오류:', error)
@@ -143,7 +152,7 @@ class SupabaseAuthClient {
 
   async verifyCode(phone: string, code: string): Promise<{ success: boolean; error?: string }> {
     const formattedPhone = this.formatPhone(phone)
-    
+
     try {
       const client = await getSupabaseClient()
       const { data, error } = await client.rpc('verify_code', {
@@ -170,7 +179,7 @@ class SupabaseAuthClient {
 
   async signUp(phone: string, name: string, verificationCode: string): Promise<AuthResponse> {
     const formattedPhone = this.formatPhone(phone)
-    
+
     // 인증번호 검증
     const verification = await this.verifyCode(formattedPhone, verificationCode)
     if (!verification.success) {
@@ -221,7 +230,7 @@ class SupabaseAuthClient {
 
   async signIn(phone: string, verificationCode: string): Promise<AuthResponse> {
     const formattedPhone = this.formatPhone(phone)
-    
+
     // 인증번호 검증
     const verification = await this.verifyCode(formattedPhone, verificationCode)
     if (!verification.success) {
@@ -257,8 +266,10 @@ class SupabaseAuthClient {
 
   async getUserProfile(userId: string): Promise<{ success: boolean; data?: UserProfile; error?: string }> {
     try {
+      const client = await getSupabaseClient()
+
       // 실제 데이터베이스에서 사용자 프로필 조회
-      const { data: userData, error: userError } = await this.supabase
+      const { data: userData, error: userError } = await client
         .from('users')
         .select('*')
         .eq('id', userId)
@@ -270,15 +281,20 @@ class SupabaseAuthClient {
       }
 
       // 사용자 프로필 정보 조회
-      const { data: profileData, error: profileError } = await this.supabase
+      const { data: profileData, error: profileError } = await client
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
-        .single()
+        .maybeSingle()
 
       if (profileError) {
-        // 프로필이 없으면 기본값으로 생성
-        const { data: newProfile, error: createError } = await this.supabase
+        console.error('프로필 조회 오류:', profileError)
+        return { success: false, error: '프로필 조회 중 오류가 발생했습니다.' }
+      }
+
+      // 프로필이 없으면 기본값으로 생성
+      if (!profileData) {
+        const { data: newProfile, error: createError } = await client
           .from('user_profiles')
           .insert([{
             id: userId,
@@ -335,7 +351,7 @@ class SupabaseAuthClient {
 
   async updateUserInfo(userId: string, name: string, phone: string): Promise<{ success: boolean; data?: AuthUser; error?: string }> {
     const formattedPhone = this.formatPhone(phone)
-    
+
     if (!this.isValidPhone(formattedPhone)) {
       return { success: false, error: '올바른 전화번호 형식이 아닙니다.' }
     }

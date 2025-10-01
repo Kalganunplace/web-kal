@@ -1,0 +1,153 @@
+import { SignJWT, jwtVerify } from 'jose'
+import { cookies } from 'next/headers'
+
+const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-change-in-production')
+
+export interface JWTPayload {
+  userId: string
+  userType: 'client' | 'admin'
+  role?: string
+  permissions?: string[]
+  exp: number
+  iat: number
+}
+
+export interface ClientJWTPayload extends JWTPayload {
+  userType: 'client'
+  phone: string
+  name: string
+  role?: string
+  permissions?: string[]
+}
+
+export interface AdminJWTPayload extends JWTPayload {
+  userType: 'admin'
+  email?: string
+  name: string
+  role: string
+  permissions: string[]
+}
+
+export class JWTService {
+  /**
+   * JWT 토큰 생성
+   */
+  static async createToken(payload: any): Promise<string> {
+    try {
+      console.log('JWT createToken called with payload:', payload)
+      console.log('JWT secret length:', secret.length)
+
+      // JWT 토큰 생성
+      const token = await new SignJWT({
+        userId: payload.userId,
+        userType: payload.userType,
+        phone: payload.phone,
+        email: payload.email,
+        name: payload.name,
+        role: payload.role,
+        permissions: payload.permissions
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('24h') // 24시간으로 단축
+        .sign(secret)
+
+      console.log('JWT token created successfully, length:', token.length)
+      return token
+    } catch (error) {
+      console.error('JWT createToken error:', error)
+      throw error
+    }
+  }
+
+  /**
+   * JWT 토큰 검증
+   */
+  static async verifyToken(token: string): Promise<JWTPayload | null> {
+    try {
+      console.log('Verifying JWT token, length:', token.length)
+      const { payload } = await jwtVerify(token, secret)
+      console.log('JWT token verified successfully:', { userId: payload.userId, userType: payload.userType })
+      return payload as JWTPayload
+    } catch (error) {
+      console.error('JWT verification failed:', error)
+      if (error instanceof Error) {
+        console.error('JWT error details:', error.message)
+      }
+      return null
+    }
+  }
+
+  /**
+   * 쿠키에서 토큰 가져오기
+   */
+  static async getTokenFromCookie(): Promise<string | null> {
+    const cookieStore = await cookies()
+    return cookieStore.get('auth-token')?.value || null
+  }
+
+  /**
+   * 쿠키에 토큰 설정
+   */
+  static setTokenCookie(token: string, response?: Response): void {
+    const maxAge = 24 * 60 * 60 // 24시간 (초 단위)
+    const cookieValue = `auth-token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}; Secure`
+
+    if (response) {
+      response.headers.set('Set-Cookie', cookieValue)
+    } else if (typeof document !== 'undefined') {
+      // 클라이언트 사이드에서는 HttpOnly 쿠키를 직접 설정할 수 없으므로
+      // 일반 쿠키로 설정 (보안상 권장하지 않음)
+      document.cookie = `auth-token=${token}; Path=/; SameSite=Strict; Max-Age=${maxAge}`
+    }
+  }
+
+  /**
+   * 쿠키에서 토큰 삭제
+   */
+  static clearTokenCookie(response?: Response): void {
+    const cookieValue = 'auth-token=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0'
+
+    if (response) {
+      response.headers.set('Set-Cookie', cookieValue)
+    } else if (typeof document !== 'undefined') {
+      document.cookie = 'auth-token=; Path=/; SameSite=Strict; Max-Age=0'
+    }
+  }
+
+  /**
+   * 현재 인증된 사용자 정보 가져오기 (서버사이드)
+   */
+  static async getCurrentUser(): Promise<JWTPayload | null> {
+    const token = await this.getTokenFromCookie()
+    if (!token) return null
+
+    return await this.verifyToken(token)
+  }
+
+  /**
+   * 클라이언트 사이드에서 토큰 가져오기
+   */
+  static getTokenFromClient(): string | null {
+    if (typeof document === 'undefined') return null
+
+    const cookies = document.cookie.split(';')
+    const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('auth-token='))
+
+    if (tokenCookie) {
+      return tokenCookie.split('=')[1]
+    }
+
+    return null
+  }
+
+  /**
+   * 클라이언트 사이드에서 현재 사용자 정보 가져오기
+   */
+  static async getCurrentUserFromClient(): Promise<JWTPayload | null> {
+    const token = this.getTokenFromClient()
+    if (!token) return null
+
+    return await this.verifyToken(token)
+  }
+}

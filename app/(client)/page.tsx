@@ -7,19 +7,41 @@ import { useAuthAware } from "@/hooks/use-auth-aware"
 import { AuthAware } from "@/components/auth/auth-aware"
 import { LoginBottomSheet } from "@/components/auth/login-prompt"
 import { useAuthHydration } from "@/hooks/use-auth-hydration"
+import { AccountSwitchModal } from "@/components/auth/account-switch-modal"
+import { useAuth } from "@/stores/auth-store"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function HomePage() {
   const router = useRouter()
   const { user, navigateWithAuth } = useAuthAware()
   const { user: authUser, loading } = useAuthHydration()
+  const { signOut } = useAuth()
   const [showLoginSheet, setShowLoginSheet] = useState(false)
+  const [showSwitchModal, setShowSwitchModal] = useState(false)
   const [loginSheetConfig, setLoginSheetConfig] = useState({
     title: "로그인이 필요해요",
     message: "이 기능을 사용하려면 로그인이 필요합니다."
   })
+
+  // 관리자로 로그인된 경우 모달 표시
+  useEffect(() => {
+    if (!loading && authUser?.type === 'admin') {
+      setShowSwitchModal(true)
+    }
+  }, [loading, authUser])
+
+  const handleSwitchConfirm = async () => {
+    await signOut()
+    setShowSwitchModal(false)
+    router.push('/login')
+  }
+
+  const handleSwitchCancel = () => {
+    setShowSwitchModal(false)
+    router.push('/admin')
+  }
 
   const handleKnifeRequest = () => {
     navigateWithAuth(
@@ -256,6 +278,17 @@ export default function HomePage() {
         title={loginSheetConfig.title}
         message={loginSheetConfig.message}
       />
+
+      {/* 계정 전환 모달 */}
+      {showSwitchModal && authUser && (
+        <AccountSwitchModal
+          currentUserName={authUser.email || '관리자'}
+          currentUserType="admin"
+          targetType="client"
+          onConfirm={handleSwitchConfirm}
+          onCancel={handleSwitchCancel}
+        />
+      )}
     </>
   )
 }

@@ -1,35 +1,23 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useAdminAuth as useAdminAuthStore } from '@/stores/auth-store'
 import { useRouter } from 'next/navigation'
-import { adminAuth, AdminUser } from '@/lib/auth/admin'
 
 export function useAdminAuth() {
-  const [admin, setAdmin] = useState<AdminUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { user: admin, loading: isLoading, isAuthenticated, signIn, signOut, hasPermission } = useAdminAuthStore()
   const router = useRouter()
 
-  useEffect(() => {
-    const currentAdmin = adminAuth.getCurrentAdmin()
-    setAdmin(currentAdmin)
-    setIsLoading(false)
-  }, [])
-
   const login = async (email: string, password: string) => {
-    const result = await adminAuth.login({ email, password })
-    if (result.success && result.admin) {
-      setAdmin(result.admin)
-    }
+    const result = await signIn(email, password)
     return result
   }
 
   const logout = async () => {
-    await adminAuth.logout()
-    setAdmin(null)
+    await signOut()
     router.push('/admin/login')
   }
 
-  const requireAuth = (): AdminUser => {
+  const requireAuth = () => {
     if (!admin) {
       router.push('/admin/login')
       throw new Error('Authentication required')
@@ -37,18 +25,16 @@ export function useAdminAuth() {
     return admin
   }
 
-  const hasPermission = (permission: string): boolean => {
-    return adminAuth.hasPermission(permission)
-  }
-
   const requirePermission = (permission: string): void => {
-    adminAuth.requirePermission(permission)
+    if (!hasPermission(permission)) {
+      throw new Error(`Permission required: ${permission}`)
+    }
   }
 
   return {
     admin,
     isLoading,
-    isAuthenticated: !!admin,
+    isAuthenticated,
     login,
     logout,
     requireAuth,

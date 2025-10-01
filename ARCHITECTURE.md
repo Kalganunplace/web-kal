@@ -1,4 +1,44 @@
-# 인증 기반 아키텍처 설계
+ ## 인증 상태 관리 구조:
+
+  1. JWT 토큰 (쿠키) - 서버 인증
+
+  - 위치: HttpOnly 쿠키 (auth-token)
+  - 목적: 서버사이드 인증 및 보안
+  - 만료: 24시간
+  - 설정: /api/auth/client/login API에서 설정
+  - 사용: middleware, API route에서 검증
+
+  2. LocalStorage (Zustand persist) - 클라이언트 상태
+
+  - 위치: localStorage (auth-storage-v2)
+  - 목적: 클라이언트 사이드 UI 상태 관리 (빠른 접근)
+  - 저장 데이터: user 객체만 (id, type, phone, name 등)
+  - 사용: 페이지 로딩 시 즉시 사용자 정보 표시
+
+  작동 방식:
+
+  1. 로그인 시:
+  로그인 API → JWT 생성 → 쿠키 설정 → user 데이터 반환
+  → Zustand store 업데이트 → localStorage 자동 저장
+  2. 페이지 새로고침 시:
+  localStorage에서 user 복원 (빠름)
+  → /api/auth/me 호출 (쿠키 JWT 검증)
+  → 최신 사용자 정보로 업데이트
+  3. 보안:
+    - JWT는 HttpOnly 쿠키라 JavaScript로 접근 불가
+    - localStorage는 UI 표시용이지 인증용이 아님
+    - 실제 권한 검증은 서버에서 쿠키 JWT로만 수행
+
+  장점:
+
+  - ✅ 보안: HttpOnly 쿠키로 XSS 공격 방지
+  - ✅ UX: localStorage로 즉시 UI 표시 (로딩 없음)
+  - ✅ 신뢰성: 서버는 항상 JWT만 신뢰
+
+  단점:
+
+  - ⚠️ 중복 관리: 쿠키와 localStorage 동기화 필요
+  - ⚠️ localStorage는 XSS에 취약하므로 민감 정보 저장 금지
 
 ## 📁 폴더 구조
 
@@ -54,7 +94,7 @@ src/
 ## 🔒 라우트 분류
 
 ### 인증 필수 (`/auth/*`)
-- `/profile` - 프로필 페이지  
+- `/profile` - 프로필 페이지
 - `/member-info` - 회원 정보
 - `/subscription` - 구독 관리
 - `/coupons` - 쿠폰 관리

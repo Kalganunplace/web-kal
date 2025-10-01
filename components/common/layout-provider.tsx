@@ -33,10 +33,10 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   const [hasNotification, setHasNotification] = useState(true)
   const initialize = useAuthStore((state) => state.initialize)
 
-  // Initialize auth store
+  // Initialize auth store - only once on mount
   React.useEffect(() => {
     initialize()
-  }, [initialize])
+  }, [])
 
 
   // Determine which pages should show navigation

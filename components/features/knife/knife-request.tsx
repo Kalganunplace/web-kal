@@ -44,6 +44,8 @@ export default function KnifeRequest({
   const [knifeSelections, setKnifeSelections] = useState<KnifeSelection[]>([])
   const [specialInstructions, setSpecialInstructions] = useState("")
   const [defaultAddress, setDefaultAddress] = useState<Address | null>(null)
+  const [userAddresses, setUserAddresses] = useState<Address[]>([])
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -71,13 +73,21 @@ export default function KnifeRequest({
         const knifesData = await knifeService.getAllKnifeTypes()
         setKnifeTypes(knifesData)
         
-        // 로그인된 사용자의 기본 주소 로드
+        // 로그인된 사용자의 주소 목록 로드
         if (isAuthenticated && user?.id) {
           try {
-            const address = await addressService.getDefaultAddress(user.id)
-            setDefaultAddress(address)
+            // 모든 주소 가져오기
+            const addresses = await addressService.getUserAddresses(user.id)
+            setUserAddresses(addresses)
+            
+            // 기본 주소 찾기
+            const defaultAddr = addresses.find(addr => addr.is_default) || addresses[0]
+            if (defaultAddr) {
+              setDefaultAddress(defaultAddr)
+              setSelectedAddress(defaultAddr)
+            }
           } catch (error) {
-            console.error('기본 주소 로드 실패:', error)
+            console.error('주소 로드 실패:', error)
           }
         }
       } catch (error) {
@@ -133,8 +143,9 @@ export default function KnifeRequest({
       return
     }
 
-    if (!defaultAddress) {
-      toast.error('기본 주소가 설정되지 않았습니다. 주소를 먼저 등록해주세요.')
+    if (!selectedAddress) {
+      toast.error('배송 주소를 선택해주세요.')
+      router.push('/address-settings')
       return
     }
 
@@ -200,19 +211,61 @@ export default function KnifeRequest({
                 <MapPin className="w-5 h-5 text-orange-500" />
                 <span className="font-medium">수거 주소</span>
               </div>
-              {defaultAddress ? (
+              
+              {userAddresses.length > 0 ? (
                 <>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {defaultAddress.address}
-                    {defaultAddress.detail_address && ` ${defaultAddress.detail_address}`}
-                  </p>
+                  {/* 주소 선택 드롭다운 */}
+                  {userAddresses.length > 1 ? (
+                    <Select
+                      value={selectedAddress?.id}
+                      onValueChange={(value) => {
+                        const addr = userAddresses.find(a => a.id === value)
+                        setSelectedAddress(addr || null)
+                      }}
+                    >
+                      <SelectTrigger className="w-full mb-2">
+                        <SelectValue placeholder="주소를 선택해주세요" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {userAddresses.map((addr) => (
+                          <SelectItem key={addr.id} value={addr.id}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">
+                                {addr.address_name || (addr.is_default ? '기본 주소' : addr.address_type)}
+                              </span>
+                              {addr.is_default && (
+                                <span className="text-xs bg-orange-100 text-orange-600 px-1 rounded">기본</span>
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {addr.address} {addr.detail_address}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : null}
+                  
+                  {/* 선택된 주소 표시 */}
+                  {selectedAddress && (
+                    <div className="p-3 bg-gray-50 rounded-lg mb-2">
+                      <p className="text-sm font-medium mb-1">
+                        {selectedAddress.address_name || (selectedAddress.is_default ? '기본 주소' : selectedAddress.address_type)}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {selectedAddress.address}
+                        {selectedAddress.detail_address && ` ${selectedAddress.detail_address}`}
+                      </p>
+                    </div>
+                  )}
+                  
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="text-orange-500 border-orange-500 bg-transparent"
+                    className="text-orange-500 border-orange-500 bg-transparent w-full"
                     onClick={() => router.push('/address-settings')}
                   >
-                    주소 변경하기
+                    주소 관리
                   </Button>
                 </>
               ) : (

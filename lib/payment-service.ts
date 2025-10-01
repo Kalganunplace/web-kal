@@ -253,6 +253,22 @@ export class PaymentService {
         throw new Error('결제 상태를 업데이트할 수 없습니다.')
       }
 
+      // 결제 확인 시 예약 상태도 업데이트
+      if (confirmData.action_type === 'confirm' && currentPayment.booking_id) {
+        const { error: bookingError } = await this.supabase
+          .from('bookings')
+          .update({
+            status: 'confirmed',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentPayment.booking_id)
+        
+        if (bookingError) {
+          console.error('예약 상태 업데이트 오류:', bookingError)
+          // 예약 업데이트 실패는 결제 확인을 막지 않음
+        }
+      }
+
       // 확인 로그 생성
       const { error: logError } = await this.supabase
         .from('payment_confirmations')
