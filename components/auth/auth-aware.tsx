@@ -95,7 +95,7 @@ function LoginPrompt() {
       <button
         onClick={() => {
           const currentPath = window.location.pathname
-          window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`
+          window.location.href = `/client/login?redirect=${encodeURIComponent(currentPath)}`
         }}
         className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
       >

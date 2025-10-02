@@ -145,7 +145,7 @@ export default function KnifeRequest({
 
     if (!selectedAddress) {
       toast.error('배송 주소를 선택해주세요.')
-      router.push('/address-settings')
+      router.push('/client/address-settings')
       return
     }
 
@@ -259,11 +259,11 @@ export default function KnifeRequest({
                     </div>
                   )}
                   
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="text-orange-500 border-orange-500 bg-transparent w-full"
-                    onClick={() => router.push('/address-settings')}
+                    onClick={() => router.push('/client/address-settings')}
                   >
                     주소 관리
                   </Button>
@@ -271,10 +271,10 @@ export default function KnifeRequest({
               ) : (
                 <div className="text-center py-4">
                   <p className="text-sm text-gray-500 mb-2">등록된 주소가 없습니다</p>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     className="bg-orange-500 hover:bg-orange-600"
-                    onClick={() => router.push('/address-settings')}
+                    onClick={() => router.push('/client/address-settings')}
                   >
                     주소 등록하기
                   </Button>

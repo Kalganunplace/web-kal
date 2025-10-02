@@ -24,7 +24,7 @@ export function useClientAuth() {
 
   const requireAuth = () => {
     if (!user) {
-      router.push('/login')
+      router.push('/client/login')
       throw new Error('Authentication required')
     }
     return user

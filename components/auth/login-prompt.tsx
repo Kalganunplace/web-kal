@@ -1,8 +1,6 @@
 "use client"
 
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { BodyMedium, Heading2 } from '@/components/ui/typography'
 import {
   Sheet,
   SheetContent,
@@ -10,7 +8,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { BodyMedium, Heading2 } from '@/components/ui/typography'
 import { useAuthHydration } from '@/hooks/use-auth-hydration'
+import { useRouter } from 'next/navigation'
 
 interface LoginPromptProps {
   title?: string
@@ -36,7 +36,7 @@ export function LoginPrompt({
 
   const handleLogin = () => {
     const currentPath = window.location.pathname
-    router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
+    router.push(`/client/login?redirect=${encodeURIComponent(currentPath)}`)
   }
 
   return (
@@ -44,15 +44,15 @@ export function LoginPrompt({
       <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-6">
         <span className="text-2xl">🛡️</span>
       </div>
-      
+
       <Heading2 color="#333333" className="font-bold mb-4">
         {title}
       </Heading2>
-      
+
       <BodyMedium color="#666666" className="mb-8 leading-relaxed">
         {message}
       </BodyMedium>
-      
+
       <div className="flex flex-col w-full max-w-xs gap-3">
         <Button
           onClick={handleLogin}
@@ -60,7 +60,7 @@ export function LoginPrompt({
         >
           {actionText}
         </Button>
-        
+
         {showCancel && onCancel && (
           <button
             onClick={onCancel}
@@ -122,13 +122,13 @@ export function LoginBottomSheet({
 
   const handleLogin = () => {
     const currentPath = window.location.pathname
-    router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
+    router.push(`/client/login?redirect=${encodeURIComponent(currentPath)}`)
     onClose()
   }
 
   const handleSignup = () => {
     const currentPath = window.location.pathname
-    router.push(`/signup?redirect=${encodeURIComponent(currentPath)}`)
+    router.push(`/client/signup?redirect=${encodeURIComponent(currentPath)}`)
     onClose()
   }
 
@@ -189,7 +189,7 @@ export function LoginBottomSheet({
           >
             {actionText || "로그인하기"}
           </Button>
-          
+
           <Button
             onClick={handleSignup}
             variant="outline"

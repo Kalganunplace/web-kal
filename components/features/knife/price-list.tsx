@@ -226,7 +226,7 @@ export default function PriceList() {
               className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-lg py-3 mt-6"
               onClick={() => {
                 handleCloseBottomSheet()
-                router.push('/knife-request')
+                router.push('/client/knife-request')
               }}
             >
               바로 신청하기

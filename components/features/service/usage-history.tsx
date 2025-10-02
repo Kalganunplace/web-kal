@@ -272,9 +272,9 @@ export default function UsageHistory() {
                   칼갈이 서비스를 신청하시면<br />
                   이용내역을 확인하실 수 있어요
                 </p>
-                <Button 
+                <Button
                   className="bg-orange-500 hover:bg-orange-600"
-                  onClick={() => router.push('/knife-request')}
+                  onClick={() => router.push('/client/knife-request')}
                 >
                   칼갈이 신청하기
                 </Button>
@@ -368,7 +368,7 @@ export default function UsageHistory() {
                   className="w-full bg-orange-500 hover:bg-orange-600"
                   onClick={() => {
                     handleCloseBottomSheet()
-                    router.push('/knife-request')
+                    router.push('/client/knife-request')
                   }}
                 >
                   재주문하기

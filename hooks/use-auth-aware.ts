@@ -28,10 +28,10 @@ export function useAuthAware() {
         // 기본 로그인 프롬프트
         const message = promptMessage || '이 기능을 사용하려면 로그인이 필요합니다.'
         const shouldLogin = confirm(`${message} 로그인하시겠습니까?`)
-        
+
         if (shouldLogin) {
           const currentPath = window.location.pathname
-          router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
+          router.push(`/client/login?redirect=${encodeURIComponent(currentPath)}`)
         }
       }
     }
@@ -52,7 +52,7 @@ export function useAuthAware() {
     } else if (guestRoute && !forceLogin) {
       router.push(guestRoute)
     } else {
-      router.push(`/login?redirect=${encodeURIComponent(authenticatedRoute)}`)
+      router.push(`/client/login?redirect=${encodeURIComponent(authenticatedRoute)}`)
     }
   }
 

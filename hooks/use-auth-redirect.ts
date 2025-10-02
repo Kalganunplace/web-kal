@@ -20,7 +20,7 @@ export function useAuthRedirect() {
     
     // 보호된 라우트에 비로그인 사용자가 접근한 경우
     if (isProtectedRoute(pathname) && !user) {
-      const loginUrl = `/login?redirect=${encodeURIComponent(pathname)}`
+      const loginUrl = `/client/login?redirect=${encodeURIComponent(pathname)}`
       router.push(loginUrl)
       return
     }

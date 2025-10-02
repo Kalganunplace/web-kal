@@ -248,7 +248,7 @@ export default function ServiceGuide() {
               </Button>
             ) : (
               <Button
-                onClick={() => router.push('/knife-request')}
+                onClick={() => router.push('/client/knife-request')}
                 className="flex-1 ml-2 bg-orange-500 hover:bg-orange-600"
               >
                 바로 신청하기

@@ -14,7 +14,7 @@ interface UseRequireAuthOptions {
  */
 export function useRequireAuth(options: UseRequireAuthOptions = {}) {
   const {
-    redirectTo = '/login',
+    redirectTo = '/client/login',
     redirectDelay = 0,
     showLoginPrompt = false
   } = options
@@ -57,7 +57,7 @@ export function useLoginPrompt() {
     if (!user && !loading) {
       const shouldLogin = confirm(`${action}을 위해 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?`)
       if (shouldLogin) {
-        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+        window.location.href = `/client/login?redirect=${encodeURIComponent(window.location.pathname)}`
       }
       return false
     }

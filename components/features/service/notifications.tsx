@@ -262,9 +262,9 @@ export default function Notifications() {
                   칼갈이 서비스를 이용하시면<br />
                   진행 상황을 알림으로 받아보실 수 있어요
                 </p>
-                <Button 
+                <Button
                   className="bg-orange-500 hover:bg-orange-600"
-                  onClick={() => router.push('/knife-request')}
+                  onClick={() => router.push('/client/knife-request')}
                 >
                   칼갈이 신청하기
                 </Button>

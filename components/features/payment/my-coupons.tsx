@@ -303,9 +303,9 @@ export default function MyCoupons() {
                       쿠폰 코드를 등록하거나<br />
                       서비스를 이용해서 쿠폰을 받아보세요
                     </p>
-                    <Button 
+                    <Button
                       className="bg-orange-500 hover:bg-orange-600"
-                      onClick={() => router.push('/knife-request')}
+                      onClick={() => router.push('/client/knife-request')}
                     >
                       칼갈이 신청하기
                     </Button>
@@ -463,11 +463,11 @@ export default function MyCoupons() {
             {/* 액션 버튼 */}
             <div className="space-y-3">
               {!selectedCoupon.is_used && (
-                <Button 
+                <Button
                   className="w-full bg-orange-500 hover:bg-orange-600"
                   onClick={() => {
                     handleCloseBottomSheet()
-                    router.push('/knife-request')
+                    router.push('/client/knife-request')
                   }}
                 >
                   바로 사용하기
