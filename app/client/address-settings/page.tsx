@@ -7,7 +7,8 @@ import TopBanner from "@/components/ui/top-banner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertTriangle } from "lucide-react"
 import { BodyMedium, CaptionMedium, Heading3 } from "@/components/ui/typography"
-import AddressSearchBottomSheet from "@/components/common/address-search-bottom-sheet"
+// import AddressSearchBottomSheet from "@/components/common/address-search-bottom-sheet"
+import DaumAddressSearchBottomSheet from "@/components/common/daum-address-search-bottom-sheet"
 import { isDaeguAddress } from "@/lib/kakao-address"
 import type { AddressData } from "@/hooks/useAddressSearch"
 import { addressService, type Address, type CreateAddressData } from "@/lib/address-service"
@@ -242,13 +243,21 @@ export default function AddressSettingsPage() {
       </div>
 
       {/* 주소 추가 바텀시트 */}
-      <AddressSearchBottomSheet
+      {/* <AddressSearchBottomSheet
         isOpen={showAddressSheet}
         onClose={() => setShowAddressSheet(false)}
         onAddressSelect={handleAddressSelect}
         showAddressName={true}
         showDetailAddress={true}
         placeholder="예) 판교역로 235, 분당 주공, 삼평동 681"
+        title="주소 추가"
+      /> */}
+      <DaumAddressSearchBottomSheet
+        isOpen={showAddressSheet}
+        onClose={() => setShowAddressSheet(false)}
+        onAddressSelect={handleAddressSelect}
+        showAddressName={true}
+        showDetailAddress={true}
         title="주소 추가"
       />
 
