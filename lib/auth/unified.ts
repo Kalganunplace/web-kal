@@ -57,7 +57,10 @@ export class UnifiedAuthService {
       return {
         success: true,
         token,
-        user: response.data
+        user: {
+          ...response.data,
+          type: 'client'
+        }
       }
     } catch (error) {
       console.error('Client login error:', error)
@@ -89,7 +92,10 @@ export class UnifiedAuthService {
       return {
         success: true,
         token,
-        user: response.data
+        user: {
+          ...response.data,
+          type: 'client'
+        }
       }
     } catch (error) {
       console.error('Client signup error:', error)
