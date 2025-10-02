@@ -27,7 +27,7 @@ function PaymentConfirmationContent() {
   useEffect(() => {
     const loadData = async () => {
       if (!isAuthenticated || !user?.id || !paymentId) {
-        router.push('/login')
+        router.push('/client/login')
         return
       }
 
@@ -37,7 +37,7 @@ function PaymentConfirmationContent() {
         // 결제 정보 조회
         const paymentData = await paymentService.getPaymentById(paymentId, user.id)
         if (!paymentData) {
-          router.push('/usage-history')
+          router.push('/client/usage-history')
           return
         }
 
@@ -53,7 +53,7 @@ function PaymentConfirmationContent() {
 
       } catch (error) {
         console.error('데이터 로드 실패:', error)
-        router.push('/usage-history')
+        router.push('/client/usage-history')
       } finally {
         setIsLoading(false)
       }
@@ -195,7 +195,7 @@ function PaymentConfirmationContent() {
             )}
             
             <Button
-              onClick={() => router.push('/usage-history')}
+              onClick={() => router.push('/client/usage-history')}
               variant="outline"
               className="w-full flex items-center gap-2"
             >

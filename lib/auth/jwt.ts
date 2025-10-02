@@ -89,29 +89,36 @@ export class JWTService {
   /**
    * 쿠키에 토큰 설정
    */
-  static setTokenCookie(token: string, response?: Response): void {
+  static async setTokenCookie(token: string): Promise<void> {
     const maxAge = 24 * 60 * 60 // 24시간 (초 단위)
-    const cookieValue = `auth-token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}; Secure`
 
-    if (response) {
-      response.headers.set('Set-Cookie', cookieValue)
-    } else if (typeof document !== 'undefined') {
-      // 클라이언트 사이드에서는 HttpOnly 쿠키를 직접 설정할 수 없으므로
-      // 일반 쿠키로 설정 (보안상 권장하지 않음)
-      document.cookie = `auth-token=${token}; Path=/; SameSite=Strict; Max-Age=${maxAge}`
+    try {
+      const cookieStore = await cookies()
+      cookieStore.set('auth-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: maxAge,
+        path: '/'
+      })
+      console.log('JWT token cookie set successfully')
+    } catch (error) {
+      console.error('Failed to set JWT token cookie:', error)
+      throw error
     }
   }
 
   /**
    * 쿠키에서 토큰 삭제
    */
-  static clearTokenCookie(response?: Response): void {
-    const cookieValue = 'auth-token=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0'
-
-    if (response) {
-      response.headers.set('Set-Cookie', cookieValue)
-    } else if (typeof document !== 'undefined') {
-      document.cookie = 'auth-token=; Path=/; SameSite=Strict; Max-Age=0'
+  static async clearTokenCookie(): Promise<void> {
+    try {
+      const cookieStore = await cookies()
+      cookieStore.delete('auth-token')
+      console.log('JWT token cookie cleared successfully')
+    } catch (error) {
+      console.error('Failed to clear JWT token cookie:', error)
+      throw error
     }
   }
 

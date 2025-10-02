@@ -40,7 +40,7 @@ function BankTransferContent() {
   useEffect(() => {
     const loadData = async () => {
       if (!isAuthenticated || !user?.id || !paymentId) {
-        router.push('/login')
+        router.push('/client/login')
         return
       }
 
@@ -51,13 +51,13 @@ function BankTransferContent() {
         const paymentData = await paymentService.getPaymentById(paymentId, user.id)
         if (!paymentData) {
           toast.error('결제 정보를 찾을 수 없습니다.')
-          router.push('/usage-history')
+          router.push('/client/usage-history')
           return
         }
 
         if (paymentData.payment_method !== 'bank_transfer') {
           toast.error('무통장입금 결제가 아닙니다.')
-          router.push('/usage-history')
+          router.push('/client/usage-history')
           return
         }
 
@@ -70,7 +70,7 @@ function BankTransferContent() {
       } catch (error) {
         console.error('데이터 로드 실패:', error)
         toast.error('정보를 불러오는 중 오류가 발생했습니다.')
-        router.push('/usage-history')
+        router.push('/client/usage-history')
       } finally {
         setIsLoading(false)
       }
@@ -269,7 +269,7 @@ function BankTransferContent() {
 
             {bankAccounts.length === 0 ? (
               <NoBankAccountState
-                onAddAccount={() => router.push('/customer-service')}
+                onAddAccount={() => router.push('/client/customer-service')}
               />
             ) : (
               bankAccounts.map((account) => (
@@ -390,7 +390,7 @@ function BankTransferContent() {
                   variant="outline"
                   size="sm"
                   className="flex items-center gap-2"
-                  onClick={() => router.push('/customer-service')}
+                  onClick={() => router.push('/client/customer-service')}
                 >
                   <MessageCircle className="w-4 h-4" />
                   1:1 문의

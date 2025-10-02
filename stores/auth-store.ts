@@ -47,7 +47,7 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: false, hydrated: true })
 
         // 쿠키가 있는 경우에만 서버 체크 수행
-        if (typeof document !== 'undefined' && document.cookie.includes('auth_token')) {
+        if (typeof document !== 'undefined' && document.cookie.includes('auth-token')) {
           try {
             const response = await fetch('/api/auth/me', {
               method: 'GET',

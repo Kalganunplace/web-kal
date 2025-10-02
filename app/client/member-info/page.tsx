@@ -184,7 +184,7 @@ export default function MemberInfoPage() {
                 </Button>
                 
                 <Button
-                  onClick={() => router.push("/address-settings")}
+                  onClick={() => router.push("/client/address-settings")}
                   variant="outline"
                   className="w-full h-14 border-gray-300 text-gray-700 font-medium rounded-xl text-lg hover:bg-gray-50"
                 >

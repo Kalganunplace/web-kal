@@ -1,17 +1,13 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Search, MapPin } from "lucide-react"
+import { Search, MapPin, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-
-declare global {
-  interface Window {
-    daum: any
-  }
-}
+import { getKakaoAddressService } from "@/lib/kakao-address"
+import type { AddressResult } from "@/lib/kakao-address"
 
 interface AddressSearchProps {
   onAddressSelect: (address: {
@@ -26,78 +22,58 @@ interface AddressSearchProps {
   }
 }
 
-export default function AddressSearch({ 
+export default function AddressSearch({
   onAddressSelect,
-  defaultAddress 
+  defaultAddress
 }: AddressSearchProps) {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<AddressResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
   const [postalCode, setPostalCode] = useState(defaultAddress?.postalCode || "")
   const [address, setAddress] = useState(defaultAddress?.address || "")
   const [detailAddress, setDetailAddress] = useState(defaultAddress?.detailAddress || "")
-  const searchButtonRef = useRef<HTMLButtonElement>(null)
-
-  // Daum 우편번호 서비스 스크립트 로드
-  useEffect(() => {
-    const script = document.createElement('script')
-    script.src = "//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
-    script.async = true
-    document.body.appendChild(script)
-
-    return () => {
-      document.body.removeChild(script)
-    }
-  }, [])
+  const [showResults, setShowResults] = useState(false)
 
   // 주소 검색 실행
-  const handleAddressSearch = () => {
-    if (!window.daum || !window.daum.Postcode) {
-      toast.error('주소 검색 서비스를 로드하는 중입니다. 잠시 후 다시 시도해주세요.')
+  const handleAddressSearch = async () => {
+    if (!searchQuery || searchQuery.length < 2) {
+      toast.error("검색어를 2자 이상 입력해주세요.")
       return
     }
 
-    new window.daum.Postcode({
-      oncomplete: function(data: any) {
-        // 팝업에서 검색결과 항목을 클릭했을때 실행할 코드
-        let addr = '' // 주소 변수
-        let extraAddr = '' // 참고항목 변수
+    setIsSearching(true)
+    setShowResults(true)
 
-        // 사용자가 선택한 주소 타입에 따라 해당 주소 값을 가져온다.
-        if (data.userSelectedType === 'R') { 
-          // 사용자가 도로명 주소를 선택했을 경우
-          addr = data.roadAddress
-        } else { 
-          // 사용자가 지번 주소를 선택했을 경우(J)
-          addr = data.jibunAddress
-        }
+    try {
+      const kakaoService = getKakaoAddressService()
+      const results = await kakaoService.search(searchQuery)
+      setSearchResults(results)
 
-        // 사용자가 선택한 주소가 도로명 타입일때 참고항목을 조합한다.
-        if(data.userSelectedType === 'R'){
-          // 법정동명이 있을 경우 추가한다. (법정리는 제외)
-          // 법정동의 경우 마지막 문자가 "동/로/가"로 끝난다.
-          if(data.bname !== '' && /[동|로|가]$/g.test(data.bname)){
-            extraAddr += data.bname
-          }
-          // 건물명이 있고, 공동주택일 경우 추가한다.
-          if(data.buildingName !== '' && data.apartment === 'Y'){
-            extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName)
-          }
-          // 표시할 참고항목이 있을 경우, 괄호까지 추가한 최종 문자열을 만든다.
-          if(extraAddr !== ''){
-            extraAddr = ' (' + extraAddr + ')'
-          }
-          // 조합된 참고항목을 주소 변수에 넣는다.
-          addr += extraAddr
-        }
-
-        // 우편번호와 주소 정보를 해당 필드에 넣는다.
-        setPostalCode(data.zonecode)
-        setAddress(addr)
-        
-        // 커서를 상세주소 필드로 이동한다.
-        setTimeout(() => {
-          document.getElementById('detail-address')?.focus()
-        }, 100)
+      if (results.length === 0) {
+        toast.error("검색 결과가 없습니다.")
       }
-    }).open()
+    } catch (error) {
+      console.error("주소 검색 오류:", error)
+      toast.error("주소 검색 중 오류가 발생했습니다.")
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  // 검색 결과 선택
+  const handleSelectResult = (result: AddressResult) => {
+    const selectedAddress = result.roadAddress || result.address
+    setPostalCode(result.zonecode || "")
+    setAddress(selectedAddress)
+    setShowResults(false)
+    setSearchQuery("")
+    setSearchResults([])
+
+    // 커서를 상세주소 필드로 이동
+    setTimeout(() => {
+      document.getElementById('detail-address')?.focus()
+    }, 100)
   }
 
   // 주소 선택 완료
@@ -114,31 +90,90 @@ export default function AddressSearch({
     })
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleAddressSearch()
+    }
+  }
+
   return (
     <div className="space-y-4">
-      {/* 우편번호 */}
+      {/* 검색 입력 */}
       <div className="space-y-2">
-        <Label htmlFor="postal-code">우편번호</Label>
+        <Label htmlFor="search-query">주소 검색</Label>
         <div className="flex gap-2">
           <Input
-            id="postal-code"
-            value={postalCode}
-            placeholder="우편번호"
-            readOnly
+            id="search-query"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="도로명, 건물명, 지번 검색"
             className="flex-1"
           />
           <Button
-            ref={searchButtonRef}
             type="button"
             onClick={handleAddressSearch}
+            disabled={isSearching || searchQuery.length < 2}
             variant="outline"
             size="sm"
             className="shrink-0"
           >
-            <Search className="w-4 h-4 mr-1" />
-            주소 검색
+            {isSearching ? (
+              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            ) : (
+              <Search className="w-4 h-4 mr-1" />
+            )}
+            검색
           </Button>
         </div>
+      </div>
+
+      {/* 검색 결과 */}
+      {showResults && (
+        <div className="border border-gray-200 rounded-lg max-h-[300px] overflow-y-auto">
+          {searchResults.length === 0 && !isSearching && (
+            <div className="text-center py-8 text-gray-500">
+              검색 결과가 없습니다.
+            </div>
+          )}
+
+          {searchResults.map((result) => (
+            <button
+              key={result.id}
+              onClick={() => handleSelectResult(result)}
+              className="w-full p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-left transition-colors"
+            >
+              <div className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm text-gray-900">
+                    {result.structured_formatting.main_text}
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    {result.structured_formatting.secondary_text}
+                  </div>
+                  {result.zonecode && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      [{result.zonecode}]
+                    </div>
+                  )}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* 우편번호 */}
+      <div className="space-y-2">
+        <Label htmlFor="postal-code">우편번호</Label>
+        <Input
+          id="postal-code"
+          value={postalCode}
+          placeholder="우편번호"
+          readOnly
+          className="bg-gray-50"
+        />
       </div>
 
       {/* 기본 주소 */}
@@ -149,6 +184,7 @@ export default function AddressSearch({
           value={address}
           placeholder="주소를 검색해주세요"
           readOnly
+          className="bg-gray-50"
         />
       </div>
 

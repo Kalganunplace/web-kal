@@ -32,7 +32,7 @@ export function AuthGuard({ children, fallback, userType, showSwitchModal = fals
         if (userType === 'admin') {
           router.replace('/admin/login')
         } else {
-          router.replace('/login')
+          router.replace('/client/login')
         }
       }
     } else if (!loading && !user) {
@@ -41,7 +41,7 @@ export function AuthGuard({ children, fallback, userType, showSwitchModal = fals
       if (userType === 'admin') {
         router.replace('/admin/login')
       } else {
-        router.replace('/login')
+        router.replace('/client/login')
       }
     } else if (!loading && user && (!userType || user.type === userType)) {
       setShouldRedirect(false)
@@ -57,7 +57,7 @@ export function AuthGuard({ children, fallback, userType, showSwitchModal = fals
     if (userType === 'admin') {
       router.push('/admin/login')
     } else {
-      router.push('/login')
+      router.push('/client/login')
     }
   }
 
@@ -68,7 +68,7 @@ export function AuthGuard({ children, fallback, userType, showSwitchModal = fals
     if (user?.type === 'admin') {
       router.push('/admin')
     } else {
-      router.push('/')
+      router.push('/client')
     }
   }
 

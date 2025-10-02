@@ -4,13 +4,13 @@ import { NextResponse } from 'next/server'
 
 // 클라이언트 인증이 필요한 라우트 정의
 const CLIENT_PROTECTED_ROUTES = [
-  '/profile',
-  '/member-info',
-  '/subscription',
-  '/coupons',
-  '/usage-history',
-  '/address-settings',
-  '/app-settings'
+  '/client/profile',
+  '/client/member-info',
+  '/client/subscription',
+  '/client/coupons',
+  '/client/usage-history',
+  '/client/address-settings',
+  '/client/app-settings'
 ]
 
 // 관리자 인증이 필요한 라우트 정의
@@ -20,15 +20,15 @@ const ADMIN_PROTECTED_ROUTES = [
 
 // 로그인된 사용자가 접근하면 안되는 라우트
 const AUTH_ROUTES = [
-  '/login',
-  '/signup',
+  '/client/login',
+  '/client/signup',
   '/admin/login'
 ]
 
 // 게스트도 접근 가능하지만 로그인 시 다른 경험을 제공하는 라우트
 const HYBRID_ROUTES = [
-  '/',
-  '/knife-request'
+  '/client',
+  '/client/knife-request'
 ]
 
 export async function middleware(request: NextRequest) {
@@ -71,15 +71,26 @@ export async function middleware(request: NextRequest) {
 
   // 클라이언트 보호된 라우트 접근 제어
   if (CLIENT_PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
+    console.log(`[Middleware] Client protected route: ${pathname}`, {
+      isAuthenticated,
+      userType,
+      hasToken: !!authCookie?.value
+    })
+    
+
     if (!isAuthenticated) {
       // 인증되지 않은 사용자 → 로그인 페이지
-      const loginUrl = new URL('/login', request.url)
+      console.log(`[Middleware] Not authenticated, redirecting to /client/login`)
+      const loginUrl = new URL('/client/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     } else if (userType !== 'client') {
       // 관리자가 클라이언트 페이지 접근 시도 → 통과시켜서 페이지에서 모달 처리
-      // middleware는 통과시키고, 페이지 컴포넌트에서 처리
+      console.log(`[Middleware] User is ${userType}, passing through for modal`)
+      return response // 명시적 반환
     }
+    // 클라이언트 인증됨 - 계속 진행
+    console.log(`[Middleware] Client authenticated, allowing access`)
   }
 
   // 관리자 보호된 라우트 접근 제어
@@ -90,14 +101,15 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     } else if (userType !== 'admin') {
-      // 클라이언트가 관리자 페이지 접근 시도 → 계속 진행 (페이지에서 모달 처리)
-      // middleware는 통과시키고, 페이지 컴포넌트에서 처리
+      // 클라이언트가 관리자 페이지 접근 시도 → 통과시켜서 페이지에서 모달 처리
+      return response // 명시적 반환
     }
+    // 관리자 인증됨 - 계속 진행
   }
 
   // 인증된 사용자가 로그인/회원가입 페이지에 접근하는 경우
   if (AUTH_ROUTES.includes(pathname) && isAuthenticated) {
-    const redirectTo = request.nextUrl.searchParams.get('redirect') || '/'
+    const redirectTo = request.nextUrl.searchParams.get('redirect') || '/client'
 
     // 관리자 로그인 페이지
     if (pathname === '/admin/login') {
@@ -110,7 +122,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // 클라이언트 로그인/회원가입 페이지
-    if (pathname === '/login' || pathname === '/signup') {
+    if (pathname === '/client/login' || pathname === '/client/signup') {
       if (userType === 'client') {
         return NextResponse.redirect(new URL(redirectTo, request.url))
       } else {

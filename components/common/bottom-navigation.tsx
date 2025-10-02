@@ -21,15 +21,15 @@ export default function BottomNavigation({ hasNotification = false }: BottomNavi
   })
 
   const navItems = [
-    { icon: "home", label: "홈", path: "/" },
-    { icon: "notification", label: "알림", path: "/notifications", hasNotification },
-    { icon: "receipt", label: "이용내역", path: "/usage-history" },
-    { icon: "profile", label: "내정보", path: "/profile" },
+    { icon: "home", label: "홈", path: "/client" },
+    { icon: "notification", label: "알림", path: "/client/notifications", hasNotification },
+    { icon: "receipt", label: "이용내역", path: "/client/usage-history" },
+    { icon: "profile", label: "내정보", path: "/client/profile" },
   ]
 
   const handleNavClick = (item: typeof navItems[0]) => {
     // 로그인이 필요한 탭들 체크
-    const authRequiredPaths = ["/profile", "/notifications", "/usage-history"]
+    const authRequiredPaths = ["/client/profile", "/client/notifications", "/client/usage-history"]
     
     if (authRequiredPaths.includes(item.path)) {
       if (!loading && !user) {
@@ -38,15 +38,15 @@ export default function BottomNavigation({ hasNotification = false }: BottomNavi
         let message = "이 기능을 사용하려면 로그인이 필요합니다."
         
         switch (item.path) {
-          case "/profile":
+          case "/client/profile":
             title = "내정보 확인하기"
             message = "프로필 정보를 보려면 로그인이 필요합니다."
             break
-          case "/notifications":
+          case "/client/notifications":
             title = "알림 확인하기"
             message = "개인 알림을 확인하려면 로그인이 필요합니다."
             break
-          case "/usage-history":
+          case "/client/usage-history":
             title = "이용내역 확인하기"
             message = "주문 내역을 보려면 로그인이 필요합니다."
             break
@@ -75,7 +75,7 @@ export default function BottomNavigation({ hasNotification = false }: BottomNavi
                 style={{ width: "36px", height: "40px" }}
               >
                 <div className="relative flex items-center justify-center" style={{ width: "24px", height: "24px" }}>
-                  {item.hasNotification && item.path === "/notifications" ? (
+                  {item.hasNotification && item.path === "/client/notifications" ? (
                     <NotificationBadgeIcon
                       size={24}
                       color={isActive ? "#E67E22" : "#767676"}

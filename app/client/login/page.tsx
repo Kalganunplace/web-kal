@@ -234,7 +234,7 @@ export default function LoginPage() {
             <div className="text-center">
               <span className="text-gray-600">계정이 없으신가요? </span>
               <button
-                onClick={() => router.push("/signup")}
+                onClick={() => router.push("/client/signup")}
                 className="text-orange-500 hover:text-orange-600 font-medium"
               >
                 회원가입

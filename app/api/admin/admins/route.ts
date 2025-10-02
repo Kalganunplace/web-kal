@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { verifyAdminAuth } from '@/middleware/admin-auth';
+import { JWTService } from '@/lib/auth/jwt';
 import { hashSync, genSaltSync } from 'bcryptjs';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -8,11 +8,44 @@ const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// 관리자 인증 검증 헬퍼
+async function verifyAdminAuth(request: NextRequest) {
+  const token = request.cookies.get('auth-token')?.value;
+
+  if (!token) {
+    return { isValid: false, error: 'No token provided' };
+  }
+
+  const payload = await JWTService.verifyToken(token);
+
+  if (!payload || payload.userType !== 'admin') {
+    return { isValid: false, error: 'Invalid admin token' };
+  }
+
+  // 관리자 정보 조회
+  const { data: admin } = await supabase
+    .from('admins')
+    .select('id, email, role')
+    .eq('id', payload.userId)
+    .single();
+
+  if (!admin) {
+    return { isValid: false, error: 'Admin not found' };
+  }
+
+  return {
+    isValid: true,
+    adminId: admin.id,
+    email: admin.email,
+    role: admin.role
+  };
+}
+
 // 관리자 목록 조회 (슈퍼관리자만)
 export async function GET(request: NextRequest) {
   try {
     const auth = await verifyAdminAuth(request);
-    
+
     if (!auth.isValid) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },

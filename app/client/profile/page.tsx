@@ -52,7 +52,7 @@ export default function ProfilePage() {
   // 계정 전환 확인
   const handleSwitchAccount = async () => {
     await signOut()
-    router.push('/login')
+    router.push('/client/login')
   }
 
   // 계정 전환 취소
@@ -234,7 +234,7 @@ export default function ProfilePage() {
 
         {/* 내 보유 쿠폰 버튼 */}
         <button
-          onClick={() => router.push("/coupons")}
+          onClick={() => router.push("/client/coupons")}
           className="w-full h-12 bg-[#E67E22] text-white font-bold rounded-md flex items-center justify-center space-x-1 shadow-sm"
         >
           <div className="w-6 h-6 text-white">🎫</div>
@@ -248,7 +248,7 @@ export default function ProfilePage() {
           <div className="space-y-0">
             {/* 회원 정보 */}
             <button
-              onClick={() => router.push("/member-info")}
+              onClick={() => router.push("/client/member-info")}
               className="w-full flex items-center justify-between py-4 px-5 border-b border-gray-100"
             >
               <BodyMedium color="#333333" className="font-bold">회원 정보</BodyMedium>
@@ -257,7 +257,7 @@ export default function ProfilePage() {
 
             {/* 주소 설정 */}
             <button
-              onClick={() => router.push("/address-settings")}
+              onClick={() => router.push("/client/address-settings")}
               className="w-full flex items-center justify-between py-4 px-5 border-b border-gray-100"
             >
               <BodyMedium color="#333333" className="font-bold">주소 설정</BodyMedium>
@@ -275,7 +275,7 @@ export default function ProfilePage() {
 
             {/* 고객센터 */}
             <button
-              onClick={() => router.push("/customer-service")}
+              onClick={() => router.push("/client/customer-service")}
               className="w-full flex items-center justify-between py-4 px-5 border-b border-gray-100"
             >
               <BodyMedium color="#333333" className="font-bold">고객센터</BodyMedium>
@@ -284,7 +284,7 @@ export default function ProfilePage() {
 
             {/* 이용약관 */}
             <button
-              onClick={() => router.push("/terms-detail")}
+              onClick={() => router.push("/client/terms-detail")}
               className="w-full flex items-center justify-between py-4 px-5 border-b border-gray-100"
             >
               <BodyMedium color="#333333" className="font-bold">이용약관</BodyMedium>
@@ -293,7 +293,7 @@ export default function ProfilePage() {
 
             {/* 설정 */}
             <button
-              onClick={() => router.push("/app-settings")}
+              onClick={() => router.push("/client/app-settings")}
               className="w-full flex items-center justify-between py-4 px-5"
             >
               <div className="flex items-center justify-between w-full">

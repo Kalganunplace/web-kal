@@ -83,7 +83,7 @@ function OrderPageContent() {
   const processOrder = async (paymentMethod: PaymentMethod, bankInfo?: { bankName: string, accountNumber: string, depositorName: string }) => {
     if (!orderData.booking || !user?.id || !isAuthenticated) {
       toast.error('로그인이 필요합니다.')
-      router.push('/login')
+      router.push('/client/login')
       return
     }
 
@@ -135,7 +135,7 @@ function OrderPageContent() {
   // 인증 확인
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login')
+      router.push('/client/login')
     }
   }, [isAuthenticated, router])
 

@@ -40,7 +40,7 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
 
 
   // Determine which pages should show navigation
-  const mainPages = ['/', '/profile', '/notifications', '/usage-history']
+  const mainPages = ['/client', '/client/profile', '/client/notifications', '/client/usage-history']
   const shouldShowNavigation = mainPages.includes(pathname)
 
   const [showNavigation, setShowNavigation] = useState(shouldShowNavigation)

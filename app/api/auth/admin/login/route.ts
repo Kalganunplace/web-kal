@@ -24,15 +24,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 응답 생성
+    // JWT 토큰을 HttpOnly 쿠키로 설정
     const response = NextResponse.json({
       success: true,
       user: result.user
     })
 
-    // JWT 토큰을 HttpOnly 쿠키로 설정
     if (result.token) {
-      JWTService.setTokenCookie(result.token, response)
+      console.log('Setting JWT token in cookie for admin:', result.user?.id)
+
+      response.cookies.set('auth-token', result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60, // 24시간
+        path: '/'
+      })
+
+      console.log('JWT token set in cookie successfully')
     }
 
     return response

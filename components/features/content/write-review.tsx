@@ -175,7 +175,7 @@ export default function WriteReview() {
       await reviewService.createReview(user.id, reviewData)
       
       toast.success('리뷰가 성공적으로 등록되었습니다!')
-      router.push('/usage-history')
+      router.push('/client/usage-history')
     } catch (error) {
       console.error('리뷰 작성 실패:', error)
       toast.error('리뷰 작성 중 오류가 발생했습니다.')

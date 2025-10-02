@@ -168,7 +168,7 @@ export default function KnifeRequest({
       await bookingService.createBooking(user.id, bookingData)
 
       toast.success('예약이 성공적으로 접수되었습니다!')
-      router.push('/usage-history')
+      router.push('/client/usage-history')
     } catch (error) {
       console.error('예약 생성 실패:', error)
       toast.error('예약 접수 중 오류가 발생했습니다.')

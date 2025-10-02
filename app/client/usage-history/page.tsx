@@ -108,12 +108,12 @@ export default function UsageHistoryPage() {
 
   const handleLoginClick = () => {
     setShowLoginSheet(false)
-    router.push("/login")
+    router.push("/client/login")
   }
 
   const handleSignupClick = () => {
     setShowLoginSheet(false)
-    router.push("/signup")
+    router.push("/client/signup")
   }
 
   const handleShowLogin = () => {
@@ -258,7 +258,7 @@ export default function UsageHistoryPage() {
                 </h2>
               </div>
               <button
-                onClick={() => router.push("/knife-request")}
+                onClick={() => router.push("/client/knife-request")}
                 className="bg-white text-orange-500 rounded-lg py-3 px-6 font-medium"
               >
                 첫 칼갈이 신청하기
@@ -269,14 +269,14 @@ export default function UsageHistoryPage() {
           {/* Quick Actions */}
           <div className="mx-5 mb-5 flex gap-5">
             <button
-              onClick={() => router.push("/price-list")}
+              onClick={() => router.push("/client/price-list")}
               className="flex-1 bg-white/10 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between"
             >
               <span className="text-white font-medium">가격표</span>
               <span className="text-white text-xl">💰</span>
             </button>
             <button
-              onClick={() => router.push("/guide")}
+              onClick={() => router.push("/client/guide")}
               className="flex-1 bg-white/10 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between"
             >
               <span className="text-white font-medium">가이드</span>
@@ -475,7 +475,7 @@ export default function UsageHistoryPage() {
             <div className="flex flex-col items-center gap-4 py-20">
               <BodyMedium color="#333333">이용 내역이 없습니다</BodyMedium>
               <button
-                onClick={() => router.push("/knife-request")}
+                onClick={() => router.push("/client/knife-request")}
                 className="bg-[#E67E22] text-white px-6 py-3 rounded-lg font-medium"
               >
                 첫 칼갈이 신청하기

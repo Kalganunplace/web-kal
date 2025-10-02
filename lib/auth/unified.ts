@@ -230,8 +230,8 @@ export class UnifiedAuthService {
    */
   static async logout(): Promise<{ success: boolean }> {
     try {
-      // 클라이언트 사이드에서 쿠키 삭제
-      JWTService.clearTokenCookie()
+      // 서버 사이드에서 쿠키 삭제
+      await JWTService.clearTokenCookie()
 
       return { success: true }
     } catch (error) {

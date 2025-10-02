@@ -35,7 +35,7 @@ export default function HomePage() {
   const handleSwitchConfirm = async () => {
     await signOut()
     setShowSwitchModal(false)
-    router.push('/login')
+    router.push('/client/login')
   }
 
   const handleSwitchCancel = () => {
@@ -45,18 +45,18 @@ export default function HomePage() {
 
   const handleKnifeRequest = () => {
     navigateWithAuth(
-      "/knife-request", 
-      "/knife-request", // 게스트도 접근 가능
+      "/client/knife-request", 
+      "/client/knife-request", // 게스트도 접근 가능
       false // 로그인 강제하지 않음
     )
   }
 
   const handlePriceList = () => {
-    router.push("/price-list")
+    router.push("/client/price-list")
   }
 
   const handleGuide = () => {
-    router.push("/guide")
+    router.push("/client/guide")
   }
 
   const handleEvent = () => {
@@ -80,7 +80,7 @@ export default function HomePage() {
       setShowLoginSheet(true)
       return
     }
-    router.push("/subscription")
+    router.push("/client/subscription")
   }
 
   return (

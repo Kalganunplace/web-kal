@@ -28,7 +28,7 @@ export default function SubscriptionPage() {
   const handleSubscribe = async (plan: typeof plans[0]) => {
     if (!isAuthenticated) {
       alert('구독하려면 로그인이 필요합니다.')
-      router.push('/login')
+      router.push('/client/login')
       return
     }
 

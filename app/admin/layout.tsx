@@ -141,7 +141,7 @@ export default function AdminLayout({
   // 계정 전환 취소
   const handleSwitchCancel = () => {
     setShowSwitchModal(false);
-    router.push('/');
+    router.push('/client');
   };
 
   if (loading) {

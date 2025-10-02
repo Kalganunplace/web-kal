@@ -11,11 +11,12 @@ import AddressSearchBottomSheet from "@/components/common/address-search-bottom-
 import { isDaeguAddress } from "@/lib/kakao-address"
 import type { AddressData } from "@/hooks/useAddressSearch"
 import { addressService, type Address, type CreateAddressData } from "@/lib/address-service"
-import { useAuthStore } from "@/stores/auth-store"
+import { useAuthUser, useAuthHydrated } from "@/stores/auth-store"
 
 export default function AddressSettingsPage() {
   const router = useRouter()
-  const { user, isAuthenticated } = useAuthStore()
+  const user = useAuthUser()
+  const hydrated = useAuthHydrated()
   const [loading, setLoading] = useState(false)
   const [showAddressSheet, setShowAddressSheet] = useState(false)
   const [showUnsupportedModal, setShowUnsupportedModal] = useState(false)
@@ -24,12 +25,29 @@ export default function AddressSettingsPage() {
 
   // 주소 목록 로드
   useEffect(() => {
-    if (!isAuthenticated || !user?.id) {
-      router.push('/login')
+    // hydration이 완료될 때까지 기다림
+    if (!hydrated) {
+      console.log('Waiting for hydration...')
       return
     }
+
+    console.log('address-settings auth check:', { user, userId: user?.id, userType: user?.type })
+
+    if (!user) {
+      console.log('No user, redirecting to /login')
+      router.push('/client/login')
+      return
+    }
+
+    if (user.type !== 'client') {
+      console.log('Not a client user, user type:', user.type)
+      router.push('/client/login')
+      return
+    }
+
+    console.log('User authenticated, loading addresses')
     loadAddresses()
-  }, [isAuthenticated, user?.id, router])
+  }, [user, hydrated, router])
 
   const loadAddresses = async () => {
     if (!user?.id) return
