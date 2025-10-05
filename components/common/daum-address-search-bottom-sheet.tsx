@@ -165,7 +165,7 @@ export function DaumAddressSearchBottomSheet({
           contentBgColor: "#FFFFFF00",  // 본문 배경색
           pageBgColor: "#FFFFFF00",     // 페이지 배경색 (연한 회색)
           textColor: "#333333",       // 기본 글자색
-          queryTextColor: "#FFFFFF",  // 검색어 글자색 (흰색)
+          queryTextColor: "#FFFFFF",  // 검색어 글자색 (흰색)c
           outlineColor: "#FFFFFF00"     // 선택 테두리색 (오렌지)
         }
       })
