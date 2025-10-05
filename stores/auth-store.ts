@@ -58,11 +58,25 @@ export const useAuthStore = create<AuthState>()(
               const data = await response.json()
               if (data.success && data.user) {
                 set({ user: data.user })
+              } else {
+                // 응답은 성공했지만 user가 없는 경우
+                set({ user: null })
+                localStorage.removeItem('auth-storage-v2')
               }
+            } else {
+              // 401 등 인증 실패한 경우 - localStorage 정리
+              set({ user: null })
+              localStorage.removeItem('auth-storage-v2')
             }
           } catch (error) {
             console.error('Auth initialization error:', error)
+            set({ user: null })
+            localStorage.removeItem('auth-storage-v2')
           }
+        } else {
+          // 쿠키가 없는 경우 - localStorage 정리
+          set({ user: null })
+          localStorage.removeItem('auth-storage-v2')
         }
       },
 
