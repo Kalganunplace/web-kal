@@ -1,7 +1,6 @@
 "use client"
 
 import BottomSheet from "@/components/ui/bottom-sheet"
-import { Button } from "@/components/ui/button"
 import TopBanner from "@/components/ui/top-banner"
 import { ChevronRight } from "lucide-react"
 import Image from "next/image"
@@ -308,7 +307,7 @@ export default function PriceList() {
             )}
 
             {/* 바로 신청 버튼 */}
-            <Button
+            {/* <Button
               className="w-full bg-[#E67E22] hover:bg-[#D35400] text-white rounded-lg py-3 font-bold mt-6"
               onClick={() => {
                 handleCloseBottomSheet()
@@ -316,7 +315,7 @@ export default function PriceList() {
               }}
             >
               바로 신청하기
-            </Button>
+            </Button> */}
           </div>
         )}
       </BottomSheet>
