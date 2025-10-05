@@ -1,11 +1,21 @@
 import { createClient } from '@/lib/auth/supabase'
 
+export type BookingStatus =
+  | 'pending'              // 접수 대기
+  | 'payment_pending'      // 결제 진행 중
+  | 'confirmed'            // 예약 확정
+  | 'ready_for_pickup'     // 픽업 준비 완료
+  | 'in_progress'          // 연마 진행 중
+  | 'shipping'             // 배송 중
+  | 'completed'            // 완료
+  | 'cancelled'            // 취소됨
+
 export interface Booking {
   id: string
   user_id: string
   booking_date: string
   booking_time: string
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+  status: BookingStatus
   total_quantity: number
   total_amount: number
   special_instructions?: string

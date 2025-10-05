@@ -8,15 +8,16 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { type Booking } from '@/lib/booking-service'
 import { paymentService } from '@/lib/payment-service'
-import { useAuthStore } from '@/stores/auth-store'
+import { useIsAuthenticated } from '@/stores/auth-store'
 import { useUserBookings } from '@/hooks/queries/use-booking'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { createClient } from '@/lib/auth/supabase'
 
 export default function UsageHistoryPage() {
   const router = useRouter()
-  const { user, isAuthenticated } = useAuthStore()
+  const { user, isAuthenticated, isLoading: authLoading } = useIsAuthenticated()
 
   const [selectedItem, setSelectedItem] = useState<Booking | null>(null)
   const [showLoginSheet, setShowLoginSheet] = useState(false)
@@ -29,7 +30,7 @@ export default function UsageHistoryPage() {
     queryKey: ['payments', 'bookings', bookings.map(b => b.id)],
     queryFn: async () => {
       if (!user?.id || bookings.length === 0) return new Map()
-      
+
       const paymentMap = new Map()
       await Promise.all(
         bookings.map(async (booking) => {
@@ -44,9 +45,52 @@ export default function UsageHistoryPage() {
     enabled: !!user?.id && bookings.length > 0,
   })
 
-  // 현재 진행 중인 서비스
-  const currentService = bookings.find(b => 
-    b.status === 'in_progress' || b.status === 'confirmed'
+  // 모든 예약의 쿠폰 정보 가져오기
+  const { data: usedCoupons = new Map() } = useQuery({
+    queryKey: ['used-coupons', 'bookings', bookings.map(b => b.id)],
+    queryFn: async () => {
+      if (!user?.id || bookings.length === 0) return new Map()
+
+      try {
+        const supabase = createClient()
+        const couponMap = new Map()
+
+        // 사용된 쿠폰 조회 (booking_id로 필터링)
+        const { data: userCoupons, error } = await supabase
+          .from('user_coupons')
+          .select(`
+            *,
+            coupon:coupons(*)
+          `)
+          .eq('user_id', user.id)
+          .eq('is_used', true)
+          .in('booking_id', bookings.map(b => b.id))
+
+        if (error) {
+          console.error('쿠폰 조회 오류 (무시됨):', error)
+          return couponMap // 빈 Map 반환
+        }
+
+        if (userCoupons) {
+          userCoupons.forEach(uc => {
+            if (uc.booking_id) {
+              couponMap.set(uc.booking_id, uc)
+            }
+          })
+        }
+
+        return couponMap
+      } catch (error) {
+        console.error('쿠폰 로드 실패 (무시됨):', error)
+        return new Map()
+      }
+    },
+    enabled: !!user?.id && bookings.length > 0,
+  })
+
+  // 현재 진행 중인 서비스 (완료/취소가 아닌 모든 상태)
+  const currentService = bookings.find(b =>
+    b.status !== 'completed' && b.status !== 'cancelled'
   )
   const hasCurrentService = !!currentService
 
@@ -74,14 +118,49 @@ export default function UsageHistoryPage() {
 
   // 상태별 표시 매핑
   const getStatusDisplay = (status: string) => {
-    const statusMap: Record<string, { text: string; icon: string }> = {
-      'pending': { text: '예약 대기', icon: '📋' },
-      'confirmed': { text: '예약 확정', icon: '✅' },
-      'in_progress': { text: '진행 중', icon: '🔄' },
-      'completed': { text: '완료', icon: '✨' },
-      'cancelled': { text: '취소됨', icon: '❌' }
+    const statusMap: Record<string, { text: string; icon: string; description: string }> = {
+      'pending': {
+        text: '영수증',
+        icon: '✏️',
+        description: '칼갈이 신청이 접수되었어요!\n이제 결제를 진행해 주시면 됩니다'
+      },
+      'payment_pending': {
+        text: '영수증',
+        icon: '💳',
+        description: '결제 진행 중입니다\n결제해주시면 예약이 마무리 됩니다'
+      },
+      'confirmed': {
+        text: '영수증',
+        icon: '📅',
+        description: '방문 예약 확정 중입니다\n장인분과 일정을 조율 중이에요 :)'
+      },
+      'ready_for_pickup': {
+        text: '영수증',
+        icon: '📦',
+        description: '칼을 준비해주세요!\n저희가 곧 픽업하러 갈게요'
+      },
+      'in_progress': {
+        text: '영수증',
+        icon: '🔨',
+        description: '장인이 칼을 연마하고 있어요\n열심히도 달구시는 모습이 있어요'
+      },
+      'shipping': {
+        text: '영수증',
+        icon: '🚚',
+        description: '칼이 배송중입니다!\n날카롭게 다듬어진 칼이 빠르게 이동 중이에요 :)'
+      },
+      'completed': {
+        text: '영수증',
+        icon: '✅',
+        description: '칼갈이 완료!\n날이 무뎌질때 바로 찾아 주세요!'
+      },
+      'cancelled': {
+        text: '영수증',
+        icon: '❌',
+        description: '예약이 취소되었습니다'
+      }
     }
-    return statusMap[status] || { text: status, icon: '🔪' }
+    return statusMap[status] || { text: '영수증', icon: '🔪', description: status }
   }
 
   // 예약 데이터를 히스토리 아이템으로 변환
@@ -127,6 +206,14 @@ export default function UsageHistoryPage() {
   // 영수증 상세 뷰
   if (selectedItem) {
     const payment = payments.get(selectedItem.id)
+    const usedCoupon = usedCoupons.get(selectedItem.id)
+
+    // 할인 및 세금 계산
+    const discountAmount = usedCoupon?.discount_amount || 0
+    const originalAmount = usedCoupon?.original_order_amount || selectedItem.total_amount
+    const finalAmount = selectedItem.total_amount
+    const taxAmount = Math.floor(finalAmount * 0.1) // 10% 부가세
+
     return (
       <>
         <TopBanner
@@ -178,6 +265,7 @@ export default function UsageHistoryPage() {
 
                 {/* Order Items */}
                 <div className="space-y-2">
+                  <CaptionLarge color="#E67E22" className="font-bold">일반 주문</CaptionLarge>
                   {selectedItem.booking_items?.map((item, index) => (
                     <div key={index} className="flex justify-between items-center">
                       <CaptionLarge color="#333333">
@@ -200,16 +288,27 @@ export default function UsageHistoryPage() {
                 <div className="bg-[#F8F8F8] rounded-[10px] p-3">
                   <CaptionLarge color="#767676" className="font-bold mb-2">기타 정보</CaptionLarge>
                   <div className="space-y-1">
-                    <div className="flex justify-between">
-                      <CaptionLarge color="#767676">할인</CaptionLarge>
-                      <CaptionLarge color="#333333">0원</CaptionLarge>
-                    </div>
+                    {/* 할인이 있는 경우에만 표시 */}
+                    {discountAmount > 0 && (
+                      <>
+                        <div className="flex justify-between">
+                          <CaptionLarge color="#767676">할인</CaptionLarge>
+                          <CaptionLarge color="#E67E22">-{discountAmount.toLocaleString()}원</CaptionLarge>
+                        </div>
+                        {usedCoupon?.coupon && (
+                          <div className="flex justify-between">
+                            <CaptionLarge color="#767676">{usedCoupon.coupon.name}</CaptionLarge>
+                            <CaptionLarge color="#333333"></CaptionLarge>
+                          </div>
+                        )}
+                      </>
+                    )}
                     <div className="flex justify-between">
                       <CaptionLarge color="#767676">부가세</CaptionLarge>
-                      <CaptionLarge color="#333333">포함</CaptionLarge>
+                      <CaptionLarge color="#333333">{taxAmount.toLocaleString()}원</CaptionLarge>
                     </div>
                     <div className="flex justify-between">
-                      <CaptionLarge color="#767676">결제수단</CaptionLarge>
+                      <CaptionLarge color="#767676">결제 수단</CaptionLarge>
                       <CaptionLarge color="#333333">
                         {payment ? paymentService.getPaymentMethodText(payment.payment_method) : '무통장입금'}
                       </CaptionLarge>
@@ -354,8 +453,8 @@ export default function UsageHistoryPage() {
     )
   }
 
-  // 로딩 상태
-  if (isLoading) {
+  // 로딩 상태 (인증 로딩 또는 데이터 로딩)
+  if (authLoading || isLoading) {
     return (
       <>
         <TopBanner
@@ -381,22 +480,16 @@ export default function UsageHistoryPage() {
       <div className="flex flex-col items-center gap-5 px-0">
         {/* Current Service Section */}
         {hasCurrentService && currentService && (
-          <div className="w-full  px-5">
+          <div className="w-full px-5">
             <div className="flex justify-between items-center gap-5 mb-5">
               <BodyMedium color="#333333">현재 진행 중인 서비스</BodyMedium>
             </div>
-            <div className="bg-white rounded-[30px] shadow-[0px_6px_12px_-6px_rgba(24,39,75,0.12),_0px_8px_24px_-4px_rgba(24,39,75,0.08)] p-5 flex items-center gap-4">
-              <div className="text-2xl">{getStatusDisplay(currentService.status).icon}</div>
-              <div className="flex-1">
-                <BodyMedium color="#333333" className="mb-1">
-                  {formatBookingItems(currentService)}
+            <div className="bg-white rounded-[30px] shadow-[0px_6px_12px_-6px_rgba(24,39,75,0.12),_0px_8px_24px_-4px_rgba(24,39,75,0.08)] p-6 flex flex-col items-center gap-3">
+              <div className="text-5xl">{getStatusDisplay(currentService.status).icon}</div>
+              <div className="text-center">
+                <BodyMedium color="#333333" className="font-bold whitespace-pre-line">
+                  {getStatusDisplay(currentService.status).description}
                 </BodyMedium>
-                <BodySmall color="#767676">
-                  {formatBookingDate(currentService)} {currentService.booking_time.slice(0, 5)}
-                </BodySmall>
-              </div>
-              <div className="bg-[#E67E22] text-white text-xs px-3 py-1 rounded-full">
-                {getStatusDisplay(currentService.status).text}
               </div>
             </div>
           </div>
@@ -404,12 +497,24 @@ export default function UsageHistoryPage() {
 
         {/* No Current Service */}
         {!hasCurrentService && (
-          <div className="w-full  px-5">
+          <div className="w-full px-5">
             <div className="flex justify-between items-center gap-5 mb-5">
               <BodyMedium color="#333333">현재 진행 중인 서비스</BodyMedium>
             </div>
-            <div className="bg-gray-50 rounded-[30px] p-5 text-center">
-              <BodySmall color="#767676">진행 중인 서비스가 없습니다</BodySmall>
+            <div className="bg-white rounded-[30px] shadow-[0px_6px_12px_-6px_rgba(24,39,75,0.12),_0px_8px_24px_-4px_rgba(24,39,75,0.08)] p-6 flex flex-col items-center gap-3">
+              <div className="text-5xl">✏️</div>
+              <div className="text-center">
+                <BodyMedium color="#333333" className="font-bold whitespace-pre-line">
+                  현재 진행 중인 서비스가 없습니다{'\n'}
+                  칼갈이, 지금 바로 신청해보세요!
+                </BodyMedium>
+              </div>
+              <button
+                onClick={() => router.push('/client/knife-request')}
+                className="mt-2 bg-[#E67E22] text-white px-6 py-2.5 rounded-lg font-medium text-sm"
+              >
+                칼갈이 신청하기
+              </button>
             </div>
           </div>
         )}
@@ -471,14 +576,20 @@ export default function UsageHistoryPage() {
           </div>
         ) : (
           /* Empty History State */
-          <div className="w-full  px-5">
-            <div className="flex flex-col items-center gap-4 py-20">
-              <BodyMedium color="#333333">이용 내역이 없습니다</BodyMedium>
+          <div className="w-full px-5">
+            <div className="bg-white rounded-[30px] shadow-[0px_6px_12px_-6px_rgba(24,39,75,0.12),_0px_8px_24px_-4px_rgba(24,39,75,0.08)] p-6 flex flex-col items-center gap-3">
+              <div className="text-5xl">📋</div>
+              <div className="text-center">
+                <BodyMedium color="#333333" className="font-bold whitespace-pre-line">
+                  이용 내역이 없습니다{'\n'}
+                  칼갈이, 지금 바로 신청해보세요!
+                </BodyMedium>
+              </div>
               <button
                 onClick={() => router.push("/client/knife-request")}
-                className="bg-[#E67E22] text-white px-6 py-3 rounded-lg font-medium"
+                className="mt-2 bg-[#E67E22] text-white px-6 py-2.5 rounded-lg font-medium text-sm"
               >
-                첫 칼갈이 신청하기
+                칼갈이 신청하기
               </button>
             </div>
           </div>

@@ -70,7 +70,7 @@ export default function PaymentConfirmation() {
           console.error('주소 로드 실패:', error)
         }
 
-        // 사용 가능한 쿠폰 로드
+        // 사용 가능한 쿠폰 로드 (선택적)
         try {
           const knifeTypeIds = bookingData.items.map(item => item.knife_type_id)
           const totalAmt = bookingData.items.reduce((sum, item) => {
@@ -80,7 +80,9 @@ export default function PaymentConfirmation() {
           const coupons = await couponService.getAvailableUserCoupons(user.id, totalAmt, knifeTypeIds)
           setAvailableCoupons(coupons)
         } catch (error) {
-          console.error('쿠폰 로드 실패:', error)
+          console.error('쿠폰 로드 실패 (선택 기능):', error)
+          // 쿠폰이 없어도 계속 진행
+          setAvailableCoupons([])
         }
       } catch (error) {
         console.error('데이터 로드 실패:', error)
@@ -309,9 +311,12 @@ export default function PaymentConfirmation() {
                 const coupon = availableCoupons.find(c => c.id === e.target.value)
                 setSelectedCoupon(coupon || null)
               }}
-              className="w-full py-3 px-4 pr-10 border border-gray-300 rounded-lg focus:border-[#E67E22] focus:outline-none appearance-none bg-white"
+              disabled={availableCoupons.length === 0}
+              className="w-full py-3 px-4 pr-10 border border-gray-300 rounded-lg focus:border-[#E67E22] focus:outline-none appearance-none bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
-              <option value="">쿠폰 선택하기</option>
+              <option value="">
+                {availableCoupons.length === 0 ? '사용 가능한 쿠폰이 없습니다' : '쿠폰 선택하기'}
+              </option>
               {availableCoupons.map((userCoupon) => (
                 <option key={userCoupon.id} value={userCoupon.id}>
                   {userCoupon.coupon?.name} - {couponService.formatDiscountValue(userCoupon.coupon!)}
