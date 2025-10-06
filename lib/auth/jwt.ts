@@ -1,7 +1,10 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-change-in-production')
+// Supabase JWT Secret 사용 (RLS 연동을 위해)
+const secret = new TextEncoder().encode(
+  process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+)
 
 export interface JWTPayload {
   userId: string
@@ -30,26 +33,31 @@ export interface AdminJWTPayload extends JWTPayload {
 
 export class JWTService {
   /**
-   * JWT 토큰 생성
+   * JWT 토큰 생성 (Supabase RLS 호환)
    */
   static async createToken(payload: any): Promise<string> {
     try {
       console.log('JWT createToken called with payload:', payload)
       console.log('JWT secret length:', secret.length)
 
-      // JWT 토큰 생성
+      // JWT 토큰 생성 (Supabase 호환 필드 포함)
       const token = await new SignJWT({
+        // Supabase RLS를 위한 필수 필드
+        sub: payload.userId,  // ⭐ Supabase auth.uid()가 인식하는 필드
+        role: 'authenticated', // ⭐ Supabase role (authenticated/anon)
+
+        // 기존 커스텀 필드 (하위 호환성 유지)
         userId: payload.userId,
         userType: payload.userType,
         phone: payload.phone,
         email: payload.email,
         name: payload.name,
-        role: payload.role,
+        user_role: payload.role, // admin의 role은 user_role로 저장 (Supabase role과 구분)
         permissions: payload.permissions
       })
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
-        .setExpirationTime('24h') // 24시간으로 단축
+        .setExpirationTime('24h')
         .sign(secret)
 
       console.log('JWT token created successfully, length:', token.length)

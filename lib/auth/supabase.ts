@@ -2,16 +2,36 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Lazy loading을 위한 동적 import
-let supabaseClientInstance: SupabaseClient<Database> | null = null
+// Note: anon key용 기본 클라이언트만 캐싱 (JWT 클라이언트는 매번 새로 생성)
+let supabaseAnonClientInstance: SupabaseClient<Database> | null = null
 
-export async function getSupabaseClient(): Promise<SupabaseClient<Database>> {
-  if (!supabaseClientInstance) {
-    const { createClient } = await import('@supabase/supabase-js')
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hrsqcroirtzbdoeheyxy.supabase.co'
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhyc3Fjcm9pcnR6YmRvZWhleXh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNjEyNjUsImV4cCI6MjA2NjkzNzI2NX0.hoVI2aI4rJncvo_9w5ZTNTqtsdjWEdCnxzsvBAb7-cw'
-    supabaseClientInstance = createClient<Database>(supabaseUrl, supabaseKey)
+/**
+ * Supabase 클라이언트 생성 (JWT 토큰 지원)
+ * @param jwtToken - 선택적 JWT 토큰 (제공 시 RLS에서 auth.uid() 사용 가능)
+ */
+export async function getSupabaseClient(jwtToken?: string): Promise<SupabaseClient<Database>> {
+  const { createClient } = await import('@supabase/supabase-js')
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hrsqcroirtzbdoeheyxy.supabase.co'
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhyc3Fjcm9pcnR6YmRvZWhleXh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNjEyNjUsImV4cCI6MjA2NjkzNzI2NX0.hoVI2aI4rJncvo_9w5ZTNTqtsdjWEdCnxzsvBAb7-cw'
+
+  // JWT 토큰이 제공된 경우: 인증된 클라이언트 생성 (RLS 활성화)
+  if (jwtToken) {
+    console.log('Creating authenticated Supabase client with JWT token')
+    return createClient<Database>(supabaseUrl, supabaseKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`
+        }
+      }
+    })
   }
-  return supabaseClientInstance
+
+  // JWT 없는 경우: anon key 클라이언트 재사용 (로그인/회원가입용)
+  if (!supabaseAnonClientInstance) {
+    console.log('Creating anon Supabase client (no JWT)')
+    supabaseAnonClientInstance = createClient<Database>(supabaseUrl, supabaseKey)
+  }
+  return supabaseAnonClientInstance
 }
 
 export interface AuthUser {
@@ -264,9 +284,9 @@ class SupabaseAuthClient {
     }
   }
 
-  async getUserProfile(userId: string): Promise<{ success: boolean; data?: UserProfile; error?: string }> {
+  async getUserProfile(userId: string, jwtToken?: string): Promise<{ success: boolean; data?: UserProfile; error?: string }> {
     try {
-      const client = await getSupabaseClient()
+      const client = await getSupabaseClient(jwtToken)
 
       // 실제 데이터베이스에서 사용자 프로필 조회
       const { data: userData, error: userError } = await client
@@ -349,7 +369,7 @@ class SupabaseAuthClient {
     }
   }
 
-  async updateUserInfo(userId: string, name: string, phone: string): Promise<{ success: boolean; data?: AuthUser; error?: string }> {
+  async updateUserInfo(userId: string, name: string, phone: string, jwtToken?: string): Promise<{ success: boolean; data?: AuthUser; error?: string }> {
     const formattedPhone = this.formatPhone(phone)
 
     if (!this.isValidPhone(formattedPhone)) {
@@ -358,7 +378,7 @@ class SupabaseAuthClient {
 
     try {
       // 다른 사용자가 같은 전화번호를 사용하는지 확인
-      const client = await getSupabaseClient()
+      const client = await getSupabaseClient(jwtToken)
       const { data: existingUser } = await client
         .from('users')
         .select('id')

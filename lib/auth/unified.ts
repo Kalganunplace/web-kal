@@ -193,14 +193,14 @@ export class UnifiedAuthService {
           }
         }
       } else if (payload.userType === 'admin') {
-        const adminPayload = payload as AdminJWTPayload
+        const adminPayload = payload as any // user_role 필드 접근을 위해 any 사용
         return {
           success: true,
           user: {
             id: adminPayload.userId,
             email: adminPayload.email,
             name: adminPayload.name,
-            role: adminPayload.role,
+            role: adminPayload.user_role || adminPayload.role, // user_role 우선, 하위 호환성 위해 role도 확인
             permissions: adminPayload.permissions,
             type: 'admin'
           }
