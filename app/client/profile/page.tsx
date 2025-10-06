@@ -8,7 +8,7 @@ import { BodyMedium, Typography } from "@/components/ui/typography"
 import { useAuthHydration } from "@/hooks/use-auth-hydration"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
-import { supabase, UserProfile } from "@/lib/auth/supabase"
+import { UserProfile } from "@/lib/auth/supabase"
 import { useAuth } from "@/stores/auth-store"
 import { AccountSwitchModal } from "@/components/auth/account-switch-modal"
 
@@ -32,7 +32,12 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user && !loading && user.type === 'client') {
       setProfileLoading(true)
-      supabase.getUserProfile(user.id)
+      // API 라우트를 통해 프로필 조회 (JWT 토큰은 HttpOnly 쿠키로 자동 전달됨)
+      fetch('/api/user/profile', {
+        method: 'GET',
+        credentials: 'include' // 쿠키 포함
+      })
+        .then(res => res.json())
         .then(response => {
           if (response.success && response.data) {
             setUserProfile(response.data)

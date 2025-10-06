@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, BodySmall, CaptionMedium } from "@/components/ui/typography"
 import { useAuthHydration } from "@/hooks/use-auth-hydration"
-import { supabase, AuthUser } from "@/lib/auth/supabase"
+import { AuthUser } from "@/lib/auth/supabase"
 
 export default function MemberInfoPage() {
   const router = useRouter()
@@ -45,13 +45,22 @@ export default function MemberInfoPage() {
     if (!memberInfo?.id) return
 
     setLoading(true)
-    
+
     try {
-      const result = await supabase.updateUserInfo(
-        memberInfo.id,
-        editInfo.name,
-        editInfo.phone
-      )
+      // API 라우트를 통해 프로필 수정 (JWT 토큰은 HttpOnly 쿠키로 자동 전달됨)
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // 쿠키 포함
+        body: JSON.stringify({
+          name: editInfo.name,
+          phone: editInfo.phone
+        })
+      })
+
+      const result = await response.json()
 
       if (result.success && result.data) {
         // 정보 업데이트 성공
