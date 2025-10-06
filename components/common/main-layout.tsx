@@ -2,6 +2,8 @@
 
 import type React from "react"
 import BottomNavigation from "./bottom-navigation"
+import { useIsAuthenticated } from "@/stores/auth-store"
+import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -9,6 +11,11 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({ children, hasNotification = false }: MainLayoutProps) {
+  const { user } = useIsAuthenticated()
+
+  // Supabase Realtime으로 실시간 알림 구독
+  useRealtimeNotifications(user?.id)
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-[500px] mx-auto bg-white min-h-screen flex flex-col shadow-lg relative">
