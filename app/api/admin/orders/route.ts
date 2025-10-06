@@ -18,12 +18,12 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     let query = supabase
-      .from('orders')
+      .from('bookings')
       .select(`
         *,
-        order_items (
+        booking_items (
           *,
-          product:products (*)
+          knife_type:knife_types (*)
         ),
         user:users (*)
       `, { count: 'exact' })
@@ -50,9 +50,34 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    return NextResponse.json({ 
-      success: true, 
-      data,
+    // bookings 데이터를 orders 형식으로 변환
+    const ordersData = data?.map((booking: any) => ({
+      id: booking.id,
+      order_number: `ORD${booking.id.substring(0, 10).toUpperCase()}`,
+      customer_name: booking.user?.name || '알 수 없음',
+      customer_phone: booking.user?.phone || '',
+      total_amount: booking.total_amount,
+      status: booking.status,
+      service_date: `${booking.booking_date}T${booking.booking_time}`,
+      service_address: booking.pickup_address || booking.special_instructions || '',
+      payment_method: 'bank_transfer',
+      cash_receipt_request: false,
+      cash_receipt_phone: '',
+      depositor_name: '',
+      notes: booking.admin_notes || booking.special_instructions,
+      created_at: booking.created_at,
+      order_items: booking.booking_items?.map((item: any) => ({
+        id: item.id,
+        product_name: item.knife_type?.name || '알 수 없음',
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price,
+      })) || []
+    })) || [];
+
+    return NextResponse.json({
+      success: true,
+      data: ordersData,
       pagination: {
         page,
         limit,
@@ -71,39 +96,52 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { items, ...orderData } = body;
+    const { items, user_id, booking_date, booking_time, ...bookingData } = body;
 
-    const orderNumber = `ORD${Date.now().toString().slice(-10)}`;
+    // 총 수량 및 금액 계산
+    let totalQuantity = 0;
+    let totalAmount = 0;
 
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
+    if (items && items.length > 0) {
+      items.forEach((item: any) => {
+        totalQuantity += item.quantity;
+        totalAmount += item.unit_price * item.quantity;
+      });
+    }
+
+    const { data: booking, error: bookingError } = await supabase
+      .from('bookings')
       .insert([{
-        ...orderData,
-        order_number: orderNumber
+        user_id,
+        booking_date,
+        booking_time,
+        total_quantity: totalQuantity,
+        total_amount: totalAmount,
+        status: 'pending',
+        ...bookingData
       }])
       .select()
       .single();
 
-    if (orderError) throw orderError;
+    if (bookingError) throw bookingError;
 
     if (items && items.length > 0) {
-      const orderItems = items.map((item: any) => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        product_name: item.product_name,
+      const bookingItems = items.map((item: any) => ({
+        booking_id: booking.id,
+        knife_type_id: item.product_id || item.knife_type_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
         total_price: item.unit_price * item.quantity
       }));
 
       const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
+        .from('booking_items')
+        .insert(bookingItems);
 
       if (itemsError) throw itemsError;
     }
 
-    return NextResponse.json({ success: true, data: order });
+    return NextResponse.json({ success: true, data: booking });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message },
@@ -119,13 +157,13 @@ export async function PUT(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json(
-        { success: false, error: 'Order ID is required' },
+        { success: false, error: 'Booking ID is required' },
         { status: 400 }
       );
     }
 
     const { data, error } = await supabase
-      .from('orders')
+      .from('bookings')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -149,12 +187,12 @@ export async function PATCH(request: NextRequest) {
 
     if (!id || !status) {
       return NextResponse.json(
-        { success: false, error: 'Order ID and status are required' },
+        { success: false, error: 'Booking ID and status are required' },
         { status: 400 }
       );
     }
 
-    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+    const validStatuses = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'];
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
         { success: false, error: 'Invalid status' },
@@ -163,7 +201,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const { data, error } = await supabase
-      .from('orders')
+      .from('bookings')
       .update({ status })
       .eq('id', id)
       .select()

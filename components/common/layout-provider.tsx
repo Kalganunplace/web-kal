@@ -50,6 +50,9 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
     setShowNavigation(shouldShowNavigation)
   }, [shouldShowNavigation])
 
+  // Admin pages don't need max-width restriction
+  const isAdminPage = pathname.startsWith('/admin')
+
   return (
     <LayoutContext.Provider
       value={{
@@ -59,19 +62,25 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
         setHasNotification,
       }}
     >
-      <div className="min-h-screen bg-white">
-        <div className="max-w-[500px] mx-auto bg-white min-h-screen flex flex-col shadow-lg relative">
-          {/* Main content */}
-          <div className={`flex-1 ${showNavigation ? 'pb-[80px]' : ''}`}>
-            {children}
-          </div>
+      {isAdminPage ? (
+        // Admin layout - full width
+        children
+      ) : (
+        // Client layout - mobile constrained
+        <div className="min-h-screen bg-white">
+          <div className="max-w-[500px] mx-auto bg-white min-h-screen flex flex-col shadow-lg relative">
+            {/* Main content */}
+            <div className={`flex-1 ${showNavigation ? 'pb-[80px]' : ''}`}>
+              {children}
+            </div>
 
-          {/* Bottom Navigation - only show on main pages */}
-          {showNavigation && (
-            <BottomNavigation hasNotification={hasNotification} />
-          )}
+            {/* Bottom Navigation - only show on main pages */}
+            {showNavigation && (
+              <BottomNavigation hasNotification={hasNotification} />
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </LayoutContext.Provider>
   )
 }
