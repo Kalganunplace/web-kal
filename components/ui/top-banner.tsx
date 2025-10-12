@@ -20,8 +20,8 @@ const TopBanner: React.FC<TopBannerProps> = ({
   return (
     <div className={cn(
       "flex justify-between items-center gap-1",
-      "px-5 pt-[60px] pb-4", // 60px top padding for status bar
-      "w-full h-20",
+      "px-5 py-[8px]", // 60px top padding for status bar
+      "w-full",
       className
     )}>
       {/* Left Icon - Back Button */}

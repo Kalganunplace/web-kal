@@ -4,16 +4,16 @@ import BottomSheet from "@/components/ui/bottom-sheet"
 import { ChevronDownIcon, ChevronRightIcon } from "@/components/ui/icon"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, BodySmall, CaptionLarge } from "@/components/ui/typography"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useUserBookings } from '@/hooks/queries/use-booking'
+import { createClient } from '@/lib/auth/supabase'
 import { type Booking } from '@/lib/booking-service'
 import { paymentService } from '@/lib/payment-service'
 import { useIsAuthenticated } from '@/stores/auth-store'
-import { useUserBookings } from '@/hooks/queries/use-booking'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { createClient } from '@/lib/auth/supabase'
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 export default function UsageHistoryPage() {
   const router = useRouter()
@@ -21,10 +21,10 @@ export default function UsageHistoryPage() {
 
   const [selectedItem, setSelectedItem] = useState<Booking | null>(null)
   const [showLoginSheet, setShowLoginSheet] = useState(false)
-  
+
   // React Query 훅 사용
   const { data: bookings = [], isLoading } = useUserBookings()
-  
+
   // 모든 예약의 결제 정보 가져오기
   const { data: payments = new Map() } = useQuery({
     queryKey: ['payments', 'bookings', bookings.map(b => b.id)],
@@ -95,14 +95,14 @@ export default function UsageHistoryPage() {
   const hasCurrentService = !!currentService
 
   // 완료된 서비스
-  const completedBookings = bookings.filter(b => 
+  const completedBookings = bookings.filter(b =>
     b.status === 'completed' || b.status === 'cancelled'
   )
   const hasHistory = completedBookings.length > 0
 
   // 연간 통계 계산
   const currentYear = new Date().getFullYear()
-  const yearlyBookings = bookings.filter(b => 
+  const yearlyBookings = bookings.filter(b =>
     new Date(b.booking_date).getFullYear() === currentYear
   )
   const yearlyStats = {
@@ -172,7 +172,7 @@ export default function UsageHistoryPage() {
     if (!booking.booking_items || booking.booking_items.length === 0) {
       return `칼갈이 ${booking.total_quantity}개`
     }
-    return booking.booking_items.map(item => 
+    return booking.booking_items.map(item =>
       `${item.knife_type?.name || '칼'} ${item.quantity}개`
     ).join(', ')
   }
@@ -221,16 +221,16 @@ export default function UsageHistoryPage() {
           onBackClick={handleCloseDetailView}
         />
 
-        <div className="flex flex-col items-center gap-5 px-0">
+        <div className="flex flex-col items-center gap-5 px-5">
           {/* Date Header */}
-          <div className="w-full  px-5">
+          <div className="w-full mt-5">
             <div className="flex items-center">
               <BodyMedium color="#333333">{formatBookingDate(selectedItem)}</BodyMedium>
             </div>
           </div>
 
           {/* Receipt Card */}
-          <div className="w-full  bg-white rounded-[15px] shadow-[0px_5px_30px_0px_rgba(0,0,0,0.1)] px-0 py-[30px]">
+          <div className="w-full bg-white rounded-[15px] shadow-[0px_5px_30px_0px_rgba(0,0,0,0.1)] py-[30px]">
             <div className="flex flex-col">
               {/* Receipt Header */}
               <div className="flex flex-col items-center gap-2 px-[30px] pb-[20px]">
@@ -554,7 +554,7 @@ export default function UsageHistoryPage() {
 
                 {/* History Item */}
                 <div
-                  className="bg-white rounded-[15px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] p-4 flex items-center gap-4 cursor-pointer hover:bg-gray-50"
+                  className="bg-white p-4 flex items-center gap-4 cursor-pointer"
                   onClick={() => handleItemClick(booking)}
                 >
                   <div className="text-xl">{getStatusDisplay(booking.status).icon}</div>
