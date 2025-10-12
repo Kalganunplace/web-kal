@@ -31,7 +31,16 @@ export async function POST(request: NextRequest) {
     })
 
     if (result.token) {
-      console.log('Setting JWT token in cookie for user:', result.user?.id)
+      console.log('[Client Login] Setting JWT token for user:', result.user?.id)
+      console.log('[Client Login] Token length:', result.token.length)
+      console.log('[Client Login] NODE_ENV:', process.env.NODE_ENV)
+      console.log('[Client Login] Cookie settings:', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60,
+        path: '/'
+      })
 
       response.cookies.set('auth-token', result.token, {
         httpOnly: true,
@@ -41,7 +50,7 @@ export async function POST(request: NextRequest) {
         path: '/'
       })
 
-      console.log('JWT token set in cookie successfully')
+      console.log('[Client Login] JWT token set in cookie successfully')
     }
 
     return response

@@ -31,11 +31,13 @@ interface LayoutProviderProps {
 export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   const pathname = usePathname()
   const [hasNotification, setHasNotification] = useState(true)
-  const initialize = useAuthStore((state) => state.initialize)
 
   // Initialize auth store - only once on mount
   React.useEffect(() => {
+    console.log('[Layout Provider] Calling auth initialize')
+    const initialize = useAuthStore.getState().initialize
     initialize()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
 

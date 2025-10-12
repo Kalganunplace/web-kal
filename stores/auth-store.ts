@@ -43,39 +43,58 @@ export const useAuthStore = create<AuthState>()(
 
       // Initialize auth state
       initialize: async () => {
-        // 즉시 loading 해제
-        set({ loading: false, hydrated: true })
+        console.log('[Auth Store] Initialize called')
 
-        // 쿠키가 있는 경우에만 서버 체크 수행
-        if (typeof document !== 'undefined' && document.cookie.includes('auth-token')) {
-          try {
-            const response = await fetch('/api/auth/me', {
-              method: 'GET',
-              credentials: 'include'
-            })
+        // 서버 사이드에서는 아무것도 하지 않음
+        if (typeof window === 'undefined') {
+          console.log('[Auth Store] Server side - skipping initialization')
+          set({ loading: false, hydrated: true })
+          return
+        }
 
-            if (response.ok) {
-              const data = await response.json()
-              if (data.success && data.user) {
-                set({ user: data.user })
-              } else {
-                // 응답은 성공했지만 user가 없는 경우
-                set({ user: null })
-                localStorage.removeItem('auth-storage-v2')
-              }
+        // 쿠키 확인
+        const hasCookie = document.cookie.includes('auth-token')
+        console.log('[Auth Store] Cookie exists:', hasCookie)
+
+        if (!hasCookie) {
+          // 쿠키가 없으면 localStorage 정리하고 종료
+          console.log('[Auth Store] No cookie - clearing state')
+          set({ user: null, loading: false, hydrated: true })
+          localStorage.removeItem('auth-storage-v2')
+          return
+        }
+
+        // 쿠키가 있으면 서버에서 사용자 정보 가져오기
+        try {
+          console.log('[Auth Store] Fetching user from /api/auth/me')
+          const response = await fetch('/api/auth/me', {
+            method: 'GET',
+            credentials: 'include',
+            cache: 'no-store'
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            console.log('[Auth Store] Server response:', data)
+
+            if (data.success && data.user) {
+              set({ user: data.user, loading: false, hydrated: true })
+              console.log('[Auth Store] User authenticated:', data.user.id)
             } else {
-              // 401 등 인증 실패한 경우 - localStorage 정리
-              set({ user: null })
+              // 응답은 성공했지만 user가 없는 경우
+              console.log('[Auth Store] No user in response - clearing state')
+              set({ user: null, loading: false, hydrated: true })
               localStorage.removeItem('auth-storage-v2')
             }
-          } catch (error) {
-            console.error('Auth initialization error:', error)
-            set({ user: null })
+          } else {
+            // 401 등 인증 실패한 경우 - localStorage 정리
+            console.log('[Auth Store] Auth failed with status:', response.status)
+            set({ user: null, loading: false, hydrated: true })
             localStorage.removeItem('auth-storage-v2')
           }
-        } else {
-          // 쿠키가 없는 경우 - localStorage 정리
-          set({ user: null })
+        } catch (error) {
+          console.error('[Auth Store] Initialization error:', error)
+          set({ user: null, loading: false, hydrated: true })
           localStorage.removeItem('auth-storage-v2')
         }
       },

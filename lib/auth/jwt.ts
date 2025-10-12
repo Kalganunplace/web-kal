@@ -76,7 +76,16 @@ export class JWTService {
       console.log('Verifying JWT token, length:', token.length)
       const { payload } = await jwtVerify(token, secret)
       console.log('JWT token verified successfully:', { userId: payload.userId, userType: payload.userType })
-      return payload as JWTPayload
+
+      // payload를 JWTPayload로 안전하게 변환
+      return {
+        userId: payload.userId as string,
+        userType: payload.userType as 'client' | 'admin',
+        role: payload.user_role as string | undefined,
+        permissions: payload.permissions as string[] | undefined,
+        exp: payload.exp as number,
+        iat: payload.iat as number
+      }
     } catch (error) {
       console.error('JWT verification failed:', error)
       if (error instanceof Error) {
