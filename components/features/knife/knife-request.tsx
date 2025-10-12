@@ -1,18 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { DatePicker } from "@/components/common/date-picker"
-import { Button } from "@/components/ui/button"
 import BottomSheet from "@/components/ui/bottom-sheet"
+import { Button } from "@/components/ui/button"
 import TopBanner from "@/components/ui/top-banner"
-import { PocketKnifeIcon as Knife, Plus, Minus } from "lucide-react"
-import { toast } from "sonner"
-import { format } from "date-fns"
 import { BodyMedium } from "@/components/ui/typography"
+import { format } from "date-fns"
+import { PocketKnifeIcon as Knife, Minus, Plus } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
-import { knifeService, type KnifeType } from "@/lib/knife-service"
 import { type CreateBookingData } from "@/lib/booking-service"
+import { knifeService, type KnifeType } from "@/lib/knife-service"
 import { useIsAuthenticated } from "@/stores/auth-store"
 import { useBookingStore } from "@/stores/booking-store"
 
@@ -39,6 +39,7 @@ export default function KnifeRequest({
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<number>(13) // 기본값 13:00
   const [knifeTypes, setKnifeTypes] = useState<KnifeType[]>([])
   const [knifeSelections, setKnifeSelections] = useState<KnifeSelection[]>([])
+  const [tempKnifeSelections, setTempKnifeSelections] = useState<KnifeSelection[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showKnifeBottomSheet, setShowKnifeBottomSheet] = useState(false)
 
@@ -65,7 +66,42 @@ export default function KnifeRequest({
     loadData()
   }, [])
 
-  // 칼 종류별 수량 업데이트
+  // 바텀시트 열기 (현재 선택을 임시 상태로 복사)
+  const handleOpenBottomSheet = () => {
+    setTempKnifeSelections([...knifeSelections])
+    setShowKnifeBottomSheet(true)
+  }
+
+  // 바텀시트에서 임시 수량 업데이트
+  const updateTempKnifeQuantity = (knifeTypeId: string, quantity: number) => {
+    setTempKnifeSelections(prev => {
+      const existing = prev.find(item => item.knife_type_id === knifeTypeId)
+      if (existing) {
+        if (quantity === 0) {
+          return prev.filter(item => item.knife_type_id !== knifeTypeId)
+        }
+        return prev.map(item =>
+          item.knife_type_id === knifeTypeId ? { ...item, quantity } : item
+        )
+      } else if (quantity > 0) {
+        return [...prev, { knife_type_id: knifeTypeId, quantity }]
+      }
+      return prev
+    })
+  }
+
+  // 바텀시트 확인 버튼 (임시 선택을 실제로 반영)
+  const handleConfirmSelection = () => {
+    setKnifeSelections([...tempKnifeSelections])
+    setShowKnifeBottomSheet(false)
+  }
+
+  // 바텀시트 닫기 (임시 선택 취소)
+  const handleCloseBottomSheet = () => {
+    setShowKnifeBottomSheet(false)
+  }
+
+  // 실제 선택에서 수량 업데이트 (선택된 칼 목록에서 직접 수정할 때)
   const updateKnifeQuantity = (knifeTypeId: string, quantity: number) => {
     setKnifeSelections(prev => {
       const existing = prev.find(item => item.knife_type_id === knifeTypeId)
@@ -153,7 +189,7 @@ export default function KnifeRequest({
         onBackClick={() => router.back()}
       />
 
-      <div className="flex-1 px-5 py-6 bg-white overflow-y-auto">
+      <div className="flex-1 px-5 py-6 bg-white">
         {/* 예약 섹션 */}
         <div className="mb-5">
           <h3 className="text-base font-bold text-gray-800 mb-3">예약</h3>
@@ -162,7 +198,7 @@ export default function KnifeRequest({
           <DatePicker
             selectedDate={selectedDate}
             onDateSelect={setSelectedDate}
-            placeholder="오늘 (월)"
+            placeholder="날짜를 선택해주세요"
           />
 
           {/* 시간대 선택 - 수평 슬라이드 */}
@@ -190,7 +226,7 @@ export default function KnifeRequest({
           <h3 className="text-base font-bold text-gray-800 mb-3">연마할 칼을 추가해 주세요!</h3>
 
           <button
-            onClick={() => setShowKnifeBottomSheet(true)}
+            onClick={handleOpenBottomSheet}
             className="w-full flex items-center justify-between p-4 border-2 border-[#E67E22] rounded-lg bg-white"
           >
             <div className="flex items-center gap-2">
@@ -283,60 +319,76 @@ export default function KnifeRequest({
       </div>
 
       {/* 칼 선택 바텀시트 */}
-      <BottomSheet isOpen={showKnifeBottomSheet} onClose={() => setShowKnifeBottomSheet(false)}>
-        <div className="p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-5 text-center">칼 추가 옵션</h3>
+      <BottomSheet isOpen={showKnifeBottomSheet} onClose={handleCloseBottomSheet}>
+        <div className="flex flex-col h-full max-h-[80vh]">
+          {/* 헤더 */}
+          <div className="p-6 pb-4 border-b border-gray-200">
+            <h3 className="text-xl font-bold text-gray-800 text-center">칼 추가 옵션</h3>
+          </div>
 
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-            {knifeTypes.map((knifeType) => {
-              const currentQuantity = knifeSelections.find(
-                item => item.knife_type_id === knifeType.id
-              )?.quantity || 0
+          {/* 칼 목록 */}
+          <div className="flex-1 overflow-y-auto p-6 pt-4">
+            <div className="space-y-3">
+              {knifeTypes.map((knifeType) => {
+                const currentQuantity = tempKnifeSelections.find(
+                  item => item.knife_type_id === knifeType.id
+                )?.quantity || 0
 
-              return (
-                <div key={knifeType.id} className="bg-[#F8F8F8] rounded-2xl p-4 flex items-center gap-4">
-                  {/* 칼 이미지 */}
-                  <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
-                    {knifeType.image_url ? (
-                      <img src={knifeType.image_url} alt={knifeType.name} className="w-full h-full object-contain" />
-                    ) : (
-                      <div className="text-4xl">🔪</div>
-                    )}
+                return (
+                  <div key={knifeType.id} className="bg-[#F8F8F8] rounded-2xl p-4 flex items-center gap-4">
+                    {/* 칼 이미지 */}
+                    <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
+                      {knifeType.image_url ? (
+                        <img src={knifeType.image_url} alt={knifeType.name} className="w-full h-full object-contain" />
+                      ) : (
+                        <div className="text-4xl">🔪</div>
+                      )}
+                    </div>
+
+                    {/* 칼 정보 */}
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-800">{knifeType.name}</h4>
+                      <p className="text-sm text-gray-500">개당 {knifeService.formatPrice(knifeType.discount_price)}</p>
+                    </div>
+
+                    {/* 수량 조절 */}
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => updateTempKnifeQuantity(knifeType.id, Math.max(0, currentQuantity - 1))}
+                        className="w-8 h-8 rounded-full border-2 border-[#E67E22] flex items-center justify-center text-[#E67E22] disabled:border-gray-300 disabled:text-gray-300"
+                        disabled={currentQuantity === 0}
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="font-bold text-lg w-6 text-center">{currentQuantity}</span>
+                      <button
+                        onClick={() => updateTempKnifeQuantity(knifeType.id, currentQuantity + 1)}
+                        className="w-8 h-8 rounded-full border-2 border-[#E67E22] flex items-center justify-center text-[#E67E22]"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* 가격 */}
+                    <div className="text-right min-w-[60px]">
+                      <p className="font-bold text-gray-800">
+                        {currentQuantity > 0 ? knifeService.formatPrice(knifeType.discount_price * currentQuantity) : '0원'}
+                      </p>
+                    </div>
                   </div>
+                )
+              })}
+            </div>
+          </div>
 
-                  {/* 칼 정보 */}
-                  <div className="flex-1">
-                    <h4 className="font-bold text-gray-800">{knifeType.name}</h4>
-                    <p className="text-sm text-gray-500">개당 {knifeService.formatPrice(knifeType.discount_price)}</p>
-                  </div>
-
-                  {/* 수량 조절 */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => updateKnifeQuantity(knifeType.id, Math.max(0, currentQuantity - 1))}
-                      className="w-8 h-8 rounded-full border-2 border-[#E67E22] flex items-center justify-center text-[#E67E22] disabled:border-gray-300 disabled:text-gray-300"
-                      disabled={currentQuantity === 0}
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="font-bold text-lg w-6 text-center">{currentQuantity}</span>
-                    <button
-                      onClick={() => updateKnifeQuantity(knifeType.id, currentQuantity + 1)}
-                      className="w-8 h-8 rounded-full border-2 border-[#E67E22] flex items-center justify-center text-[#E67E22]"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {/* 가격 */}
-                  <div className="text-right min-w-[60px]">
-                    <p className="font-bold text-gray-800">
-                      {currentQuantity > 0 ? knifeService.formatPrice(knifeType.discount_price * currentQuantity) : '0원'}
-                    </p>
-                  </div>
-                </div>
-              )
-            })}
+          {/* 하단 고정 버튼 */}
+          <div className="p-6 pt-4 border-t border-gray-200 bg-white">
+            <Button
+              onClick={handleConfirmSelection}
+              className="w-full bg-[#E67E22] hover:bg-[#D35400] text-white rounded-xl py-4 font-bold text-lg"
+            >
+              추가하기
+            </Button>
           </div>
         </div>
       </BottomSheet>

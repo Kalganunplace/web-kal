@@ -110,9 +110,9 @@ export function DatePicker({
                 day_today: "bg-orange-100 text-orange-600",
                 nav_button: "hover:bg-gray-100",
                 caption: "text-center",
-                head_cell: "text-gray-500 font-normal text-sm w-10 h-8 flex items-center justify-center",
-                cell: "w-10 h-10 text-center p-0",
-                day: "w-10 h-10 text-sm font-normal hover:bg-gray-100 rounded-full"
+                head_cell: "text-gray-500 font-normal text-sm flex-1 h-10 flex items-center justify-center",
+                cell: "flex-1 h-12 text-center p-0",
+                day: "w-full h-full text-sm font-normal hover:bg-gray-100 rounded-full flex items-center justify-center"
               }}
             />
 

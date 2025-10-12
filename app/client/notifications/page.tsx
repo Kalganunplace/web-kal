@@ -29,7 +29,23 @@ export default function NotificationsPage() {
 
   const formatNotificationTime = (dateString: string) => {
     const date = new Date(dateString)
-    return formatRelative(date, new Date(), { locale: ko })
+    const now = new Date()
+    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+
+    // 오늘이면 시:분만 표시
+    if (diffInDays === 0) {
+      return format(date, 'HH:mm', { locale: ko })
+    }
+
+    // 7일 이내면 요일과 시:분 표시
+    if (diffInDays < 7) {
+      const dayOfWeek = format(date, 'EEEE', { locale: ko })
+      const time = format(date, 'HH:mm', { locale: ko })
+      return `지난 ${dayOfWeek} ${time}`
+    }
+
+    // 그 이상이면 날짜와 시:분 표시
+    return format(date, 'MM.dd HH:mm', { locale: ko })
   }
 
   const formatNotificationDate = (dateString: string) => {

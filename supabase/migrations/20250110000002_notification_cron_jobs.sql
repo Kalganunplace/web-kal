@@ -20,6 +20,7 @@ RETURNS void AS $$
 DECLARE
   v_booking RECORD;
   v_count INTEGER := 0;
+  v_formatted_time TEXT;
 BEGIN
   -- 오늘 수거 예정인 확정된 예약 조회
   FOR v_booking IN
@@ -37,6 +38,9 @@ BEGIN
         AND title = '오늘 칼 수거 예정입니다'
         AND created_at::date = CURRENT_DATE
     ) THEN
+      -- 시간 포맷팅 (HH:MI)
+      v_formatted_time := to_char(v_booking.booking_time, 'HH24:MI');
+
       -- 알림 생성
       INSERT INTO notifications (
         user_id,
@@ -48,7 +52,7 @@ BEGIN
       ) VALUES (
         v_booking.user_id,
         '오늘 칼 수거 예정입니다',
-        format('오늘 %s경 방문하여 칼을 수거할 예정입니다.', COALESCE(v_booking.booking_time::TEXT, '예정 시간')),
+        format('오늘 %s경 방문하여 칼을 수거할 예정입니다.', COALESCE(v_formatted_time, '예정 시간')),
         'booking',
         v_booking.id,
         false

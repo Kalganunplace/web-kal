@@ -62,6 +62,8 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('PUT /api/admin/banners - Request body:', JSON.stringify(body, null, 2));
+
     const { id, ...updateData } = body;
 
     if (!id) {
@@ -71,6 +73,9 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    console.log('Updating banner with ID:', id);
+    console.log('Update data:', JSON.stringify(updateData, null, 2));
+
     const { data, error } = await supabase
       .from('banners')
       .update(updateData)
@@ -78,10 +83,15 @@ export async function PUT(request: NextRequest) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase update error:', error);
+      throw error;
+    }
 
+    console.log('Update successful:', data);
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
+    console.error('PUT /api/admin/banners error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

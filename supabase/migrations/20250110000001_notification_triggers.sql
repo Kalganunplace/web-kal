@@ -19,6 +19,8 @@ DECLARE
   v_title TEXT;
   v_message TEXT;
   v_type TEXT;
+  v_formatted_date TEXT;
+  v_formatted_time TEXT;
 BEGIN
   -- user_id가 없으면 알림 생성 안함
   IF p_user_id IS NULL THEN
@@ -30,13 +32,17 @@ BEGIN
   FROM bookings
   WHERE id = p_booking_id;
 
+  -- 날짜와 시간 포맷팅
+  v_formatted_date := to_char(v_booking.booking_date, 'YYYY-MM-DD');
+  v_formatted_time := to_char(v_booking.booking_time, 'HH24:MI');
+
   -- 상태별 알림 내용 설정
   CASE p_new_status
     WHEN 'confirmed' THEN
       v_title := '예약이 확정되었습니다!';
       v_message := format('입금이 확인되었습니다. %s %s에 방문 예정입니다.',
-                         COALESCE(v_booking.booking_date::TEXT, '예정일'),
-                         COALESCE(v_booking.booking_time::TEXT, '예정 시간'));
+                         COALESCE(v_formatted_date, '예정일'),
+                         COALESCE(v_formatted_time, '예정 시간'));
       v_type := 'booking';
 
     WHEN 'in_progress' THEN
