@@ -63,17 +63,58 @@ Cookie: auth-token=eyJhbGc...
 
 ### 4단계: 브라우저 콘솔 로그 확인
 
-새로고침 후 콘솔에서:
+**로그인 시 확인할 로그:**
 ```
+[Auth Store] signInClient called
+[Auth Store] Login response: { success: true, user: {...} }
+[Auth Store] Setting user in store: <uuid>
+[Auth Store] localStorage after set: exists {...}
+```
+
+**새로고침 후 콘솔에서 확인할 로그:**
+```
+[Auth Store] onRehydrateStorage - starting rehydration
+[Auth Store] localStorage raw value: {"state":{"user":{...}},"version":0}
+[Auth Store] Rehydration completed - user: <uuid>
 [Layout Provider] Calling auth initialize
 [Auth Store] Initialize called
 [Auth Store] Cookie exists: true
+[Auth Store] Current user before initialize: <uuid>
 [Auth Store] Fetching user from /api/auth/me
+[Auth Store] /api/auth/me response status: 200
 [Auth Store] Server response: { success: true, user: {...} }
 [Auth Store] User authenticated: <uuid>
 ```
 
 ## 🐛 일반적인 문제와 해결책
+
+### 문제 0: localStorage가 생성되지 않음 (쿠키는 생성됨)
+**증상:** 로그인 성공, 쿠키는 생성되지만 localStorage (auth-storage-v2)가 비어있음
+
+**진단:**
+1. 로그인 직후 콘솔에서 다음 로그 확인:
+   ```
+   [Auth Store] localStorage after set: exists {...}
+   ```
+   - "exists"가 나오면 → localStorage 쓰기 성공
+   - "null"이 나오면 → Zustand persist 문제
+
+2. 새로고침 후 콘솔에서 다음 로그 확인:
+   ```
+   [Auth Store] localStorage raw value: {"state":{"user":{...}},"version":0}
+   ```
+   - 값이 있으면 → localStorage는 정상, 다른 문제
+   - null이면 → localStorage가 정말 비어있음
+
+**원인:**
+- Zustand persist middleware가 production 빌드에서 작동하지 않음
+- initialize()가 localStorage를 너무 빨리 clear함
+- 브라우저 localStorage가 비활성화됨
+
+**해결:**
+- initialize() 로직을 수정하여 에러 시에도 localStorage를 보존하도록 함 (이미 적용됨)
+- 브라우저 설정에서 localStorage 활성화 확인
+- 시크릿 모드가 아닌지 확인 (시크릿 모드는 localStorage 제한)
 
 ### 문제 1: 쿠키가 설정되지 않음
 **증상:** 로그인 후 Application 탭에서 auth-token 쿠키가 보이지 않음
