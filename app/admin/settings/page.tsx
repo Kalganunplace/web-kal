@@ -23,7 +23,10 @@ import {
   RefreshCw,
   Shield,
   Database,
-  Activity
+  Activity,
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,6 +34,15 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [currentAdmin, setCurrentAdmin] = useState<any>(null);
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [businessInfo, setBusinessInfo] = useState({
     name: '칼가는곳',
@@ -172,16 +184,16 @@ export default function SettingsPage() {
 
   const handleBackup = async () => {
     if (!confirm('데이터베이스 백업을 진행하시겠습니까?')) return;
-    
+
     setLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       toast({
         title: '성공',
         description: '데이터베이스 백업이 완료되었습니다.',
       });
-      
+
       setSystemInfo(prev => ({
         ...prev,
         lastBackup: new Date().toLocaleString('ko-KR'),
@@ -190,6 +202,79 @@ export default function SettingsPage() {
       toast({
         title: '오류',
         description: '백업에 실패했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    const { currentPassword, newPassword, confirmPassword } = passwordForm;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        title: '오류',
+        description: '모든 필드를 입력해주세요.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: '오류',
+        description: '새 비밀번호는 6자 이상이어야 합니다.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: '오류',
+        description: '새 비밀번호가 일치하지 않습니다.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/admin/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: '성공',
+          description: '비밀번호가 변경되었습니다.',
+        });
+        setPasswordForm({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+      } else {
+        toast({
+          title: '오류',
+          description: data.error || '비밀번호 변경에 실패했습니다.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: '오류',
+        description: '서버 오류가 발생했습니다.',
         variant: 'destructive',
       });
     } finally {
@@ -570,6 +655,96 @@ export default function SettingsPage() {
                       캐시 초기화
                     </Button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  비밀번호 변경
+                </CardTitle>
+                <CardDescription>
+                  관리자 계정의 비밀번호를 변경합니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>현재 비밀번호</Label>
+                  <div className="relative">
+                    <Input
+                      type={showCurrentPassword ? 'text' : 'password'}
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                      placeholder="현재 비밀번호를 입력하세요"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                    >
+                      {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>새 비밀번호</Label>
+                  <div className="relative">
+                    <Input
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                      placeholder="새 비밀번호를 입력하세요 (6자 이상)"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                    >
+                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>새 비밀번호 확인</Label>
+                  <div className="relative">
+                    <Input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                      placeholder="새 비밀번호를 다시 입력하세요"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <Alert>
+                  <Shield className="h-4 w-4" />
+                  <AlertDescription>
+                    비밀번호는 6자 이상이어야 하며, 주기적으로 변경하는 것을 권장합니다.
+                  </AlertDescription>
+                </Alert>
+
+                <Separator />
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleChangePassword}
+                    disabled={loading}
+                    className="bg-orange-500 hover:bg-orange-600"
+                  >
+                    <Lock className="h-4 w-4 mr-2" />
+                    비밀번호 변경
+                  </Button>
                 </div>
               </CardContent>
             </Card>

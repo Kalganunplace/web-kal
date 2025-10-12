@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Lock, AlertCircle } from 'lucide-react';
+import { User, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/stores/auth-store';
 import { AccountSwitchModal } from '@/components/auth/account-switch-modal';
 
@@ -20,6 +20,7 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [infoMessage, setInfoMessage] = useState('');
   const [showSwitchModal, setShowSwitchModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // URL 파라미터 확인
   useEffect(() => {
@@ -125,13 +126,20 @@ export default function AdminLoginPage() {
               <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit(e)}
-                className="pl-10"
+                className="pl-10 pr-10"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
 
@@ -151,7 +159,7 @@ export default function AdminLoginPage() {
 
           <div className="pt-2 text-sm text-gray-600">
             <p>테스트 계정:</p>
-            <p>• admin / admin123!</p>
+            <p>• admin / admin123!!</p>
             <p>• staff / staff123!</p>
           </div>
         </CardContent>

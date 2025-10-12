@@ -12,6 +12,15 @@ import { BodyMedium, BodySmall } from "@/components/ui/typography"
 import { knifeService, type KnifeTypeWithCouponPrice } from "@/lib/knife-service"
 import { useIsAuthenticated } from "@/stores/auth-store"
 
+interface Banner {
+  id: string;
+  position: string;
+  title?: string;
+  image_url: string;
+  link_url?: string;
+  display_order: number;
+}
+
 export default function PriceList() {
   const router = useRouter()
   const { user, isAuthenticated } = useIsAuthenticated()
@@ -20,25 +29,37 @@ export default function PriceList() {
   const [selectedKnife, setSelectedKnife] = useState<KnifeTypeWithCouponPrice | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
+  const [banner, setBanner] = useState<Banner | null>(null)
 
   // 데이터 로드
   useEffect(() => {
-    const loadKnifeTypes = async () => {
+    const loadData = async () => {
       try {
         setIsLoading(true)
-        const data = await knifeService.getKnifeTypesWithCouponPrice(
-          isAuthenticated ? user?.id : undefined
-        )
-        setKnifeTypes(data)
+
+        // 칼 종류와 배너를 동시에 로드
+        const [knifeData, bannerRes] = await Promise.all([
+          knifeService.getKnifeTypesWithCouponPrice(
+            isAuthenticated ? user?.id : undefined
+          ),
+          fetch('/api/banners?position=price_list')
+        ]);
+
+        setKnifeTypes(knifeData);
+
+        const bannerData = await bannerRes.json();
+        if (bannerData.success && bannerData.data.length > 0) {
+          setBanner(bannerData.data[0]);
+        }
       } catch (error) {
-        console.error('칼 종류 로드 실패:', error)
+        console.error('데이터 로드 실패:', error)
         toast.error('가격 정보를 불러오는 중 오류가 발생했습니다.')
       } finally {
         setIsLoading(false)
       }
     }
 
-    loadKnifeTypes()
+    loadData()
   }, [isAuthenticated, user?.id])
 
   const handleKnifeSelect = (knife: KnifeTypeWithCouponPrice) => {
@@ -82,25 +103,41 @@ export default function PriceList() {
 
       <div className="flex-1 px-5 py-6 bg-gray-50 space-y-6">
         {/* 배너 */}
-        <div className="relative bg-[#FAF3E0] rounded-2xl p-5 overflow-hidden">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="text-[#333333]" style={{ fontFamily: 'Do Hyeon', fontSize: '22px', fontWeight: 400, lineHeight: '1.3' }}>
-                이제 칼갈이도<br />
-                <span className="text-[#E67E22]">구독으로!</span>
-              </div>
-            </div>
-            <div className="relative w-28 h-16 flex-shrink-0">
+        {banner ? (
+          <button
+            onClick={() => banner.link_url && router.push(banner.link_url)}
+            className="w-full relative rounded-2xl overflow-hidden"
+          >
+            <div className="relative w-full h-32">
               <Image
-                src="/images/home/main_banner.png"
-                alt="칼갈이 구독"
+                src={banner.image_url}
+                alt={banner.title || "가격표 배너"}
                 fill
-                className="object-contain"
-                unoptimized
+                className="object-cover"
               />
             </div>
+          </button>
+        ) : (
+          <div className="relative bg-[#FAF3E0] rounded-2xl p-5 overflow-hidden">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="text-[#333333]" style={{ fontFamily: 'Do Hyeon', fontSize: '22px', fontWeight: 400, lineHeight: '1.3' }}>
+                  이제 칼갈이도<br />
+                  <span className="text-[#E67E22]">구독으로!</span>
+                </div>
+              </div>
+              <div className="relative w-28 h-16 flex-shrink-0">
+                <Image
+                  src="/images/home/main_banner.png"
+                  alt="칼갈이 구독"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 가격표 테이블 */}
         <div className="bg-white rounded-xl overflow-hidden shadow-sm">

@@ -24,10 +24,10 @@ CREATE TRIGGER update_admins_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- 초기 관리자 계정 생성 (비밀번호는 bcrypt 해시)
--- super_admin: admin / admin123!
+-- super_admin: admin / admin123!!
 -- staff: staff / staff123!
 INSERT INTO admins (username, email, password_hash, name, role, permissions) VALUES
-  ('admin', 'admin@kalganenungot.com', '$2b$10$OIcPAADjG0LnK470qgm14.pf3KGCUn803uGRH5guLN4mIp/WETnji', '슈퍼 관리자', 'super_admin', ARRAY['*']),
+  ('admin', 'admin@kalganenungot.com', '$2b$10$JRZUNTRLwob3InPFOJ1FLOKJsnXo3ke1oYBqXnYFDhBllhIOjDguy', '슈퍼 관리자', 'super_admin', ARRAY['*']),
   ('staff', 'staff@kalganenungot.com', '$2b$10$RRQWrRy4hSEdiD3KGUQr3.xNDsnprIbqGlmdnhCFiqTWcc3sahTty', '직원', 'staff', ARRAY['orders', 'customers', 'products'])
 ON CONFLICT (username) DO NOTHING;
 

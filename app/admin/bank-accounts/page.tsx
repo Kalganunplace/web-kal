@@ -44,7 +44,8 @@ interface BankAccount {
   bank_name: string;
   account_number: string;
   account_holder: string;
-  is_primary: boolean;
+  is_default: boolean;
+  description?: string;
   created_at: string;
   updated_at: string;
 }
@@ -56,6 +57,7 @@ const BANK_LIST = [
   '우리은행',
   '하나은행',
   '기업은행',
+  '대구은행',
   'SC제일은행',
   '씨티은행',
   '케이뱅크',
@@ -79,7 +81,7 @@ export default function BankAccountsPage() {
     bank_name: '',
     account_number: '',
     account_holder: '',
-    is_primary: false,
+    is_default: false,
   });
 
   useEffect(() => {
@@ -148,7 +150,7 @@ export default function BankAccountsPage() {
 
   const handleDelete = async (id: string) => {
     const accountToDelete = accounts.find(acc => acc.id === id);
-    if (accountToDelete?.is_primary) {
+    if (accountToDelete?.is_default) {
       toast({
         title: '오류',
         description: '기본 계좌는 삭제할 수 없습니다. 다른 계좌를 기본으로 설정한 후 삭제해주세요.',
@@ -181,8 +183,8 @@ export default function BankAccountsPage() {
     }
   };
 
-  const handleSetPrimary = async (account: BankAccount) => {
-    if (account.is_primary) return;
+  const handleSetDefault = async (account: BankAccount) => {
+    if (account.is_default) return;
 
     try {
       const response = await fetch('/api/admin/bank-accounts', {
@@ -190,7 +192,7 @@ export default function BankAccountsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: account.id,
-          is_primary: true,
+          is_default: true,
         }),
       });
 
@@ -217,7 +219,7 @@ export default function BankAccountsPage() {
       bank_name: account.bank_name,
       account_number: account.account_number,
       account_holder: account.account_holder,
-      is_primary: account.is_primary,
+      is_default: account.is_default,
     });
     setIsDialogOpen(true);
   };
@@ -238,7 +240,7 @@ export default function BankAccountsPage() {
       bank_name: '',
       account_number: '',
       account_holder: '',
-      is_primary: false,
+      is_default: false,
     });
   };
 
@@ -247,7 +249,7 @@ export default function BankAccountsPage() {
     return accountNumber;
   };
 
-  const primaryAccount = accounts.find(acc => acc.is_primary);
+  const defaultAccount = accounts.find(acc => acc.is_default);
 
   if (loading) {
     return (
@@ -327,12 +329,12 @@ export default function BankAccountsPage() {
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    id="is_primary"
-                    checked={formData.is_primary}
-                    onChange={(e) => setFormData({ ...formData, is_primary: e.target.checked })}
+                    id="is_default"
+                    checked={formData.is_default}
+                    onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
                     className="rounded"
                   />
-                  <Label htmlFor="is_primary">기본 계좌로 설정</Label>
+                  <Label htmlFor="is_default">기본 계좌로 설정</Label>
                 </div>
               )}
             </div>
@@ -348,7 +350,7 @@ export default function BankAccountsPage() {
         </Dialog>
       </div>
 
-      {primaryAccount && (
+      {defaultAccount && (
         <Card className="border-orange-200 bg-orange-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -361,24 +363,24 @@ export default function BankAccountsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold mb-1">
-                  {primaryAccount.bank_name}
+                  {defaultAccount.bank_name}
                 </div>
                 <div className="text-lg font-mono">
-                  {formatAccountNumber(primaryAccount.account_number)}
+                  {formatAccountNumber(defaultAccount.account_number)}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  예금주: {primaryAccount.account_holder}
+                  예금주: {defaultAccount.account_holder}
                 </div>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handleCopy(
-                  `${primaryAccount.bank_name} ${primaryAccount.account_number} (예금주: ${primaryAccount.account_holder})`,
-                  primaryAccount.id
+                  `${defaultAccount.bank_name} ${defaultAccount.account_number} (예금주: ${defaultAccount.account_holder})`,
+                  defaultAccount.id
                 )}
               >
-                {copiedId === primaryAccount.id ? (
+                {copiedId === defaultAccount.id ? (
                   <Check className="h-4 w-4 text-green-600" />
                 ) : (
                   <Copy className="h-4 w-4" />
@@ -439,13 +441,13 @@ export default function BankAccountsPage() {
                     </TableCell>
                     <TableCell>{account.account_holder}</TableCell>
                     <TableCell>
-                      {account.is_primary ? (
+                      {account.is_default ? (
                         <Badge className="bg-orange-500">기본</Badge>
                       ) : (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleSetPrimary(account)}
+                          onClick={() => handleSetDefault(account)}
                         >
                           기본으로 설정
                         </Button>
@@ -464,7 +466,7 @@ export default function BankAccountsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(account.id)}
-                          disabled={account.is_primary}
+                          disabled={account.is_default}
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>

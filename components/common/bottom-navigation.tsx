@@ -61,8 +61,8 @@ export default function BottomNavigation({ hasNotification = false }: BottomNavi
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 max-w-[500px] mx-auto">
-      <div className="bg-white rounded-t-[30px] h-[80px] shadow-[0_-4px_4px_0_rgba(0,0,0,0.05)] border-t border-gray-100">
+    <div className="fixed bottom-0 left-0 right-0 z-50 max-w-[500px] mx-auto rounded-t-[30px] overflow-hidden">
+      <div className="bg-white h-[80px] shadow-[0_-4px_4px_0_rgba(0,0,0,0.05)] border-t border-gray-100">
         <div className="flex justify-between items-center px-10 py-1 h-full">
           {navItems.map((item) => {
             const isActive = pathname === item.path

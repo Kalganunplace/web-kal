@@ -63,8 +63,10 @@ function BankTransferContent() {
 
         setPayment(paymentData)
 
-        // 입금 계좌 정보 조회 (저희 계좌)
-        const accounts = await paymentService.getActiveBankAccounts()
+        // 입금 계좌 정보 조회 (저희 계좌) - API를 통해 조회
+        const response = await fetch('/api/bank-accounts')
+        const result = await response.json()
+        const accounts = result.success ? result.data : []
         setBankAccounts(accounts)
 
       } catch (error) {

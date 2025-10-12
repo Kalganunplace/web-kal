@@ -424,10 +424,18 @@ class SupabaseAuthClient {
 
 export const supabase = new SupabaseAuthClient()
 
-// Supabase 클라이언트 생성 함수 export
+// Supabase 클라이언트 싱글톤 인스턴스
+let browserSupabaseClient: any = null
+
+// Supabase 클라이언트 생성 함수 export (싱글톤 패턴)
 export function createClient() {
+  if (browserSupabaseClient) {
+    return browserSupabaseClient
+  }
+
   const { createClient: createSupabaseClient } = require('@supabase/supabase-js')
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  return createSupabaseClient(supabaseUrl, supabaseKey)
+  browserSupabaseClient = createSupabaseClient(supabaseUrl, supabaseKey)
+  return browserSupabaseClient
 }

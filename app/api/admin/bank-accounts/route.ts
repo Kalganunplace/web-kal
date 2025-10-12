@@ -9,9 +9,9 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export async function GET(request: NextRequest) {
   try {
     const { data, error } = await supabase
-      .from('bank_accounts')
+      .from('payment_bank_accounts')
       .select('*')
-      .order('is_primary', { ascending: false });
+      .order('is_default', { ascending: false });
 
     if (error) throw error;
 
@@ -27,24 +27,48 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    if (body.is_primary) {
-      await supabase
-        .from('bank_accounts')
-        .update({ is_primary: false })
-        .eq('is_primary', true);
+
+    // 필수 필드 확인
+    if (!body.bank_name || !body.account_number || !body.account_holder) {
+      return NextResponse.json(
+        { success: false, error: '은행명, 계좌번호, 예금주는 필수 항목입니다.' },
+        { status: 400 }
+      );
     }
 
+    // 기본 계좌로 설정하려는 경우 기존 기본 계좌를 해제
+    if (body.is_default) {
+      await supabase
+        .from('payment_bank_accounts')
+        .update({ is_default: false })
+        .eq('is_default', true);
+    }
+
+    // 삽입할 데이터 준비
+    const insertData = {
+      bank_name: body.bank_name,
+      account_number: body.account_number,
+      account_holder: body.account_holder,
+      is_active: body.is_active !== undefined ? body.is_active : true,
+      is_default: body.is_default || false,
+      description: body.description || null,
+      display_order: body.display_order || 0,
+    };
+
     const { data, error } = await supabase
-      .from('bank_accounts')
-      .insert([body])
+      .from('payment_bank_accounts')
+      .insert([insertData])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Bank account insert error:', error);
+      throw error;
+    }
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
+    console.error('POST /api/admin/bank-accounts error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -64,15 +88,15 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    if (updateData.is_primary) {
+    if (updateData.is_default) {
       await supabase
-        .from('bank_accounts')
-        .update({ is_primary: false })
-        .eq('is_primary', true);
+        .from('payment_bank_accounts')
+        .update({ is_default: false })
+        .eq('is_default', true);
     }
 
     const { data, error } = await supabase
-      .from('bank_accounts')
+      .from('payment_bank_accounts')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -102,7 +126,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { error } = await supabase
-      .from('bank_accounts')
+      .from('payment_bank_accounts')
       .delete()
       .eq('id', id);
 

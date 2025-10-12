@@ -106,8 +106,22 @@ export default function AdminDashboard() {
     usedCoupons: 0,
   });
 
+  const [salesData, setSalesData] = useState<{
+    labels: string[];
+    sales: number[];
+  }>({
+    labels: [],
+    sales: []
+  });
+
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [popularProducts, setPopularProducts] = useState<any[]>([]);
+
   useEffect(() => {
     fetchDashboardData();
+    fetchSalesData();
+    fetchRecentOrders();
+    fetchPopularProducts();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -115,11 +129,11 @@ export default function AdminDashboard() {
       // 주문 데이터
       const ordersRes = await fetch('/api/admin/orders?limit=100');
       const ordersData = await ordersRes.json();
-      
+
       // 상품 데이터
       const productsRes = await fetch('/api/admin/products');
       const productsData = await productsRes.json();
-      
+
       // 쿠폰 데이터
       const couponsRes = await fetch('/api/admin/coupons');
       const couponsData = await couponsRes.json();
@@ -145,6 +159,45 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchSalesData = async () => {
+    try {
+      const res = await fetch('/api/admin/dashboard?type=sales');
+      const data = await res.json();
+
+      if (data.success) {
+        setSalesData(data.data);
+      }
+    } catch (error) {
+      console.error('매출 데이터 로딩 실패:', error);
+    }
+  };
+
+  const fetchRecentOrders = async () => {
+    try {
+      const res = await fetch('/api/admin/dashboard?type=recent_orders');
+      const data = await res.json();
+
+      if (data.success) {
+        setRecentOrders(data.data);
+      }
+    } catch (error) {
+      console.error('최근 주문 데이터 로딩 실패:', error);
+    }
+  };
+
+  const fetchPopularProducts = async () => {
+    try {
+      const res = await fetch('/api/admin/dashboard?type=popular_products');
+      const data = await res.json();
+
+      if (data.success) {
+        setPopularProducts(data.data);
+      }
+    } catch (error) {
+      console.error('인기 상품 데이터 로딩 실패:', error);
+    }
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('ko-KR', {
       style: 'currency',
@@ -154,11 +207,11 @@ export default function AdminDashboard() {
 
   // 차트 데이터
   const salesChartData = {
-    labels: ['월', '화', '수', '목', '금', '토', '일'],
+    labels: salesData.labels.length > 0 ? salesData.labels : ['월', '화', '수', '목', '금', '토', '일'],
     datasets: [
       {
         label: '일별 매출',
-        data: [120000, 190000, 150000, 250000, 220000, 300000, 280000],
+        data: salesData.sales.length > 0 ? salesData.sales : [0, 0, 0, 0, 0, 0, 0],
         borderColor: 'rgb(249, 115, 22)',
         backgroundColor: 'rgba(249, 115, 22, 0.5)',
         tension: 0.4,
@@ -229,8 +282,7 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{formatPrice(stats.totalRevenue)}</div>
             <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 mr-1 text-green-600" />
-              지난달 대비 12% 증가
+              전체 매출 누적
             </p>
           </CardContent>
         </Card>
@@ -315,18 +367,26 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                    <div>
-                      <p className="text-sm font-medium">ORD20250{i}29001</p>
-                      <p className="text-xs text-gray-500">홍길동 - 소형칼 외 2건</p>
+              {recentOrders.length > 0 ? (
+                recentOrders.map((order) => (
+                  <div key={order.id} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                      <div>
+                        <p className="text-sm font-medium">{order.order_number}</p>
+                        <p className="text-xs text-gray-500">
+                          {order.customer_name} - {order.items_description}
+                        </p>
+                      </div>
                     </div>
+                    <div className="text-sm text-gray-500">{order.time_ago}</div>
                   </div>
-                  <div className="text-sm text-gray-500">5분 전</div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  최근 주문이 없습니다
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
@@ -338,24 +398,24 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { name: '소형 칼', count: 45, price: 3000 },
-                { name: '일반 칼', count: 38, price: 6000 },
-                { name: '대형 칼', count: 25, price: 8000 },
-                { name: '일반 가위', count: 22, price: 3000 },
-                { name: '회칼', count: 15, price: 13000 },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="text-sm font-bold text-orange-500">#{i + 1}</div>
-                    <div>
-                      <p className="text-sm font-medium">{item.name}</p>
-                      <p className="text-xs text-gray-500">{formatPrice(item.price)}</p>
+              {popularProducts.length > 0 ? (
+                popularProducts.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="text-sm font-bold text-orange-500">#{i + 1}</div>
+                      <div>
+                        <p className="text-sm font-medium">{item.name}</p>
+                        <p className="text-xs text-gray-500">{formatPrice(item.price)}</p>
+                      </div>
                     </div>
+                    <div className="text-sm font-medium">{item.count}건</div>
                   </div>
-                  <div className="text-sm font-medium">{item.count}건</div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  인기 상품이 없습니다
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>

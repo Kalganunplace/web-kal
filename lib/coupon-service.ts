@@ -187,7 +187,7 @@ export class CouponService {
       .from('user_coupons')
       .select(`
         *,
-        coupon:coupons(*)
+        coupon_type:coupon_types(*)
       `)
       .eq('user_id', userId)
 
@@ -195,15 +195,44 @@ export class CouponService {
       query = query.eq('is_used', false)
     }
 
-    const { data, error } = await query
-      .order('created_at', { ascending: false })
+    const { data, error } = await query.order('created_at', { ascending: false })
 
     if (error) {
       console.error('사용자 쿠폰 조회 오류:', error)
       throw new Error('쿠폰 목록을 불러올 수 없습니다.')
     }
 
-    return data || []
+    console.log('[CouponService] Raw data from DB:', JSON.stringify(data, null, 2))
+
+    // 새로운 구조의 데이터를 기존 UserCoupon 형식으로 변환
+    const transformed = data?.map((item: any) => ({
+      ...item,
+      coupon_id: item.coupon_type_id,
+      coupon: item.coupon_type ? {
+        id: item.coupon_type.id,
+        name: item.coupon_type.name,
+        description: item.coupon_type.description,
+        coupon_code: item.code,
+        type: item.coupon_type.discount_type === 'percentage' ? 'percentage' : 'fixed',
+        value: item.coupon_type.discount_value,
+        min_order_amount: item.coupon_type.min_order_amount,
+        max_discount_amount: item.coupon_type.max_discount_amount,
+        usage_limit: 1,
+        used_count: item.is_used ? 1 : 0,
+        is_stackable: false,
+        target_knife_types: [],
+        is_first_order_only: false,
+        valid_from: item.issued_at,
+        valid_until: item.expires_at,
+        is_active: item.coupon_type.is_active,
+        created_at: item.coupon_type.created_at,
+        updated_at: item.coupon_type.created_at
+      } : undefined
+    }))
+
+    console.log('[CouponService] Transformed data:', JSON.stringify(transformed, null, 2))
+
+    return transformed || []
   }
 
   async getAvailableUserCoupons(userId: string, orderAmount?: number, knifeTypes?: string[]): Promise<UserCoupon[]> {
@@ -237,12 +266,13 @@ export class CouponService {
       .from('user_coupons')
       .insert({
         user_id: userId,
-        coupon_id: couponId,
+        coupon_type_id: couponId,
+        code: `USER-${Date.now()}`,
         is_used: false
       })
       .select(`
         *,
-        coupon:coupons(*)
+        coupon_type:coupon_types(*)
       `)
       .single()
 
@@ -251,7 +281,33 @@ export class CouponService {
       throw new Error('쿠폰을 발급할 수 없습니다.')
     }
 
-    return userCoupon
+    // 새로운 구조의 데이터를 기존 UserCoupon 형식으로 변환
+    const transformed = {
+      ...userCoupon,
+      coupon_id: userCoupon.coupon_type_id,
+      coupon: userCoupon.coupon_type ? {
+        id: userCoupon.coupon_type.id,
+        name: userCoupon.coupon_type.name,
+        description: userCoupon.coupon_type.description,
+        coupon_code: userCoupon.code,
+        type: userCoupon.coupon_type.discount_type === 'percentage' ? 'percentage' : 'fixed',
+        value: userCoupon.coupon_type.discount_value,
+        min_order_amount: userCoupon.coupon_type.min_order_amount,
+        max_discount_amount: userCoupon.coupon_type.max_discount_amount,
+        usage_limit: 1,
+        used_count: userCoupon.is_used ? 1 : 0,
+        is_stackable: false,
+        target_knife_types: [],
+        is_first_order_only: false,
+        valid_from: userCoupon.issued_at,
+        valid_until: userCoupon.expires_at,
+        is_active: userCoupon.coupon_type.is_active,
+        created_at: userCoupon.coupon_type.created_at,
+        updated_at: userCoupon.coupon_type.created_at
+      } : undefined
+    }
+
+    return transformed as UserCoupon
   }
 
   async useCoupon(userCouponId: string, bookingId: string, discountAmount: number, originalAmount: number): Promise<void> {

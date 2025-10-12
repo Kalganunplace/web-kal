@@ -271,7 +271,7 @@ export default function ProfilePage() {
 
             {/* 공지사항 */}
             <button
-              onClick={() => router.push("/notices")}
+              onClick={() => router.push("/client/notices")}
               className="w-full flex items-center justify-between py-4 px-5 border-b border-gray-100"
             >
               <BodyMedium color="#333333" className="font-bold">공지사항</BodyMedium>

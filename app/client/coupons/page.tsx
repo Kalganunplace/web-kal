@@ -8,6 +8,7 @@ import { BodyMedium, BodySmall, CaptionMedium, Heading2, Heading3 } from "@/comp
 import { Skeleton } from "@/components/ui/skeleton"
 import { createClient } from "@/lib/auth/supabase"
 import { useAuthAware } from "@/hooks/use-auth-aware"
+import { CouponDetailModal } from "@/components/features/coupon/coupon-detail-modal"
 
 interface Coupon {
   id: string
@@ -18,6 +19,10 @@ interface Coupon {
   category: "신규" | "웰컴" | "일반"
   discountType: "1+1" | "무료" | "할인"
   remainingDays: number
+  minOrderAmount?: number
+  maxDiscountAmount?: number
+  applicableItems?: string[]
+  terms?: string[]
 }
 
 export default function CouponsPage() {
@@ -25,6 +30,8 @@ export default function CouponsPage() {
   const { user, isAuthenticated } = useAuthAware()
   const [loading, setLoading] = useState(true)
   const [coupons, setCoupons] = useState<Coupon[]>([])
+  const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -37,10 +44,13 @@ export default function CouponsPage() {
       }
       
       try {
-        // 실제 DB에서 사용자 쿠폰 조회
+        // 실제 DB에서 사용자 쿠폰 조회 (user_coupons + coupon_types 조인)
         const { data, error } = await supabase
-          .from('coupons')
-          .select('*')
+          .from('user_coupons')
+          .select(`
+            *,
+            coupon_type:coupon_types(*)
+          `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
 
@@ -50,14 +60,15 @@ export default function CouponsPage() {
         }
 
         // DB 데이터를 Coupon 형태로 변환
-        const formattedCoupons: Coupon[] = data?.map(coupon => {
-          const expiresAt = coupon.expires_at ? new Date(coupon.expires_at) : null
+        const formattedCoupons: Coupon[] = data?.map((userCoupon: any) => {
+          const couponType = userCoupon.coupon_type
+          const expiresAt = userCoupon.expires_at ? new Date(userCoupon.expires_at) : null
           const remainingDays = expiresAt ? Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0
-          
+
           return {
-            id: coupon.id,
-            title: coupon.title,
-            description: coupon.description || '',
+            id: userCoupon.id,
+            title: couponType?.name || '쿠폰',
+            description: couponType?.description || '',
             validUntil: expiresAt ? expiresAt.toLocaleDateString('ko-KR', {
               year: 'numeric',
               month: '2-digit',
@@ -65,12 +76,19 @@ export default function CouponsPage() {
               hour: '2-digit',
               minute: '2-digit'
             }).replace(/\. /g, '.') + '까지' : '무제한',
-            isUsed: coupon.status === 'used',
-            category: coupon.coupon_type === 'free_service' ? '신규' : 
-                     coupon.coupon_type === 'discount' ? '할인' : '일반',
-            discountType: coupon.coupon_type === 'free_service' ? '1+1' :
-                         coupon.discount_percent ? '할인' : '무료',
-            remainingDays
+            isUsed: userCoupon.is_used,
+            category: couponType?.discount_type === 'percentage' ? '할인' : '신규',
+            discountType: couponType?.discount_type === 'fixed_amount' ? '할인' :
+                         couponType?.discount_type === 'percentage' ? '할인' : '무료',
+            remainingDays,
+            minOrderAmount: couponType?.min_order_amount || 0,
+            maxDiscountAmount: couponType?.max_discount_amount,
+            applicableItems: ['식도', '과도', '빵칼 (가정 기본 3종)'],
+            terms: [
+              '본 쿠폰은 발행일로부터 서비스 예약 시에만 이용 가능',
+              '고객당 1회 사용 가능',
+              '서비스 이용 시 쿠폰을 선택하여 사용 가능'
+            ]
           }
         }) || []
         
@@ -203,9 +221,15 @@ export default function CouponsPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="border-t border-gray-100 pt-3">
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold">
+                  <Button
+                    onClick={() => {
+                      setSelectedCoupon(coupon)
+                      setIsModalOpen(true)
+                    }}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold"
+                  >
                     자세히보기
                   </Button>
                 </div>
@@ -249,6 +273,18 @@ export default function CouponsPage() {
         {/* Spacer for bottom navigation */}
         <div className="h-20" />
       </div>
+
+      {/* 쿠폰 상세 모달 */}
+      {selectedCoupon && (
+        <CouponDetailModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false)
+            setSelectedCoupon(null)
+          }}
+          coupon={selectedCoupon}
+        />
+      )}
     </>
   )
 }

@@ -57,11 +57,30 @@ interface Banner {
 }
 
 const BANNER_POSITIONS = [
-  { value: 'home_main', label: '홈 메인 배너' },
-  { value: 'home_sub', label: '홈 서브 배너' },
-  { value: 'price_list', label: '가격표 배너' },
-  { value: 'service_top', label: '서비스 상단' },
-  { value: 'service_bottom', label: '서비스 하단' },
+  {
+    value: 'home_main',
+    label: '홈 메인 배너',
+    description: '홈 화면 상단의 큰 메인 배너 (권장 크기: 1080x1080px)',
+    size: '정사각형 (1:1)'
+  },
+  {
+    value: 'home_sub_event',
+    label: '홈 서브 배너 - 이벤트',
+    description: '홈 화면 중간의 이벤트 배너 (권장 크기: 1080x400px)',
+    size: '가로형 (33:12)'
+  },
+  {
+    value: 'home_sub_subscription',
+    label: '홈 서브 배너 - 구독',
+    description: '홈 화면 중간의 구독 배너 (권장 크기: 1080x400px)',
+    size: '가로형 (33:12)'
+  },
+  {
+    value: 'price_list',
+    label: '가격표 배너',
+    description: '가격표 페이지 상단 배너 (권장 크기: 1080x400px)',
+    size: '가로형'
+  },
 ];
 
 export default function BannersPage() {
@@ -72,7 +91,9 @@ export default function BannersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
   const [previewUrl, setPreviewUrl] = useState('');
-  
+  const [uploading, setUploading] = useState(false);
+  const [uploadedFilePath, setUploadedFilePath] = useState('');
+
   const [formData, setFormData] = useState({
     position: 'home_main',
     title: '',
@@ -219,6 +240,64 @@ export default function BannersPage() {
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // 파일 타입 검증
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+      toast({
+        title: '오류',
+        description: '지원하지 않는 파일 형식입니다. (JPG, PNG, GIF, WEBP만 가능)',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // 파일 크기 검증 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: '오류',
+        description: '파일 크기는 5MB를 초과할 수 없습니다.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+      uploadFormData.append('folder', 'banners');
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setFormData({ ...formData, image_url: data.data.url });
+        setPreviewUrl(data.data.url);
+        setUploadedFilePath(data.data.path);
+        toast({
+          title: '성공',
+          description: '이미지가 업로드되었습니다.',
+        });
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      toast({
+        title: '오류',
+        description: `업로드 실패: ${error.message}`,
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const resetForm = () => {
     setEditingBanner(null);
     setFormData({
@@ -230,6 +309,7 @@ export default function BannersPage() {
       is_active: true,
     });
     setPreviewUrl('');
+    setUploadedFilePath('');
   };
 
   const filteredBanners = banners.filter((banner) => {
@@ -271,25 +351,34 @@ export default function BannersPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              <div>
+                <Label>배너 위치</Label>
+                <Select
+                  value={formData.position}
+                  onValueChange={(value) => setFormData({ ...formData, position: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BANNER_POSITIONS.map((pos) => (
+                      <SelectItem key={pos.value} value={pos.value}>
+                        <div>
+                          <div className="font-medium">{pos.label}</div>
+                          <div className="text-xs text-gray-500">{pos.size}</div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {formData.position && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    {BANNER_POSITIONS.find(p => p.value === formData.position)?.description}
+                  </p>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>배너 위치</Label>
-                  <Select
-                    value={formData.position}
-                    onValueChange={(value) => setFormData({ ...formData, position: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BANNER_POSITIONS.map((pos) => (
-                        <SelectItem key={pos.value} value={pos.value}>
-                          {pos.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div>
                   <Label>표시 순서</Label>
                   <Input
@@ -298,6 +387,19 @@ export default function BannersPage() {
                     onChange={(e) => setFormData({ ...formData, display_order: e.target.value })}
                     placeholder="0"
                   />
+                  <p className="text-xs text-gray-500 mt-1">숫자가 작을수록 먼저 표시됩니다</p>
+                </div>
+                <div>
+                  <Label>활성화</Label>
+                  <div className="flex items-center space-x-2 h-10">
+                    <Switch
+                      checked={formData.is_active}
+                      onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                    />
+                    <span className="text-sm text-gray-600">
+                      {formData.is_active ? '활성' : '비활성'}
+                    </span>
+                  </div>
                 </div>
               </div>
               
@@ -311,11 +413,36 @@ export default function BannersPage() {
               </div>
 
               <div>
-                <Label>이미지 URL</Label>
+                <Label>이미지 업로드</Label>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      className="flex-1"
+                    />
+                    {uploading && (
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500"></div>
+                        업로드 중...
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    JPG, PNG, GIF, WEBP 파일만 가능 (최대 5MB)
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative">
+                <Label>또는 이미지 URL 직접 입력</Label>
                 <Input
                   value={formData.image_url}
                   onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                   placeholder="https://example.com/banner.jpg"
+                  disabled={uploading}
                 />
               </div>
 
@@ -323,9 +450,9 @@ export default function BannersPage() {
                 <div>
                   <Label>이미지 미리보기</Label>
                   <div className="mt-2 border rounded-lg overflow-hidden">
-                    <img 
-                      src={previewUrl} 
-                      alt="배너 미리보기" 
+                    <img
+                      src={previewUrl}
+                      alt="배너 미리보기"
                       className="w-full h-48 object-cover"
                       onError={() => setPreviewUrl('')}
                     />
@@ -340,14 +467,7 @@ export default function BannersPage() {
                   onChange={(e) => setFormData({ ...formData, link_url: e.target.value })}
                   placeholder="https://example.com/event"
                 />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                />
-                <Label>활성화</Label>
+                <p className="text-xs text-gray-500 mt-1">배너 클릭 시 이동할 URL (비워두면 클릭 불가)</p>
               </div>
             </div>
             <DialogFooter>
