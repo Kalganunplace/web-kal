@@ -52,31 +52,21 @@ export const useAuthStore = create<AuthState>()(
           return
         }
 
-        // 쿠키 확인
-        const hasCookie = document.cookie.includes('auth-token')
-        console.log('[Auth Store] Cookie exists:', hasCookie)
-
         // 🔍 Check current state before doing anything
         const currentState = useAuthStore.getState()
         console.log('[Auth Store] Current user before initialize:', currentState.user?.id || 'null')
 
-        if (!hasCookie) {
-          // 쿠키가 없으면 localStorage 정리하고 종료
-          console.log('[Auth Store] No cookie - clearing state')
-          set({ user: null, loading: false, hydrated: true })
-
-          // 🔍 Only clear localStorage if we're sure user is not authenticated
-          const storedData = localStorage.getItem('auth-storage-v2')
-          if (storedData) {
-            console.log('[Auth Store] Clearing localStorage:', storedData.substring(0, 50))
-            localStorage.removeItem('auth-storage-v2')
-          }
+        // ⚠️ HttpOnly 쿠키는 document.cookie로 읽을 수 없음!
+        // localStorage에 user가 있으면 서버에 검증 요청, 없으면 그냥 종료
+        if (!currentState.user) {
+          console.log('[Auth Store] No user in localStorage - skipping authentication check')
+          set({ loading: false, hydrated: true })
           return
         }
 
-        // 쿠키가 있으면 서버에서 사용자 정보 가져오기
+        // localStorage에 user가 있으면 서버에서 검증
         try {
-          console.log('[Auth Store] Fetching user from /api/auth/me')
+          console.log('[Auth Store] User found in localStorage - validating with server')
           const response = await fetch('/api/auth/me', {
             method: 'GET',
             credentials: 'include',
@@ -90,13 +80,13 @@ export const useAuthStore = create<AuthState>()(
             console.log('[Auth Store] Server response:', data)
 
             if (data.success && data.user) {
+              // 서버에서 최신 사용자 정보로 업데이트
               set({ user: data.user, loading: false, hydrated: true })
-              console.log('[Auth Store] User authenticated:', data.user.id)
+              console.log('[Auth Store] User authenticated and updated:', data.user.id)
             } else {
-              // 응답은 성공했지만 user가 없는 경우 - 드물게 발생
-              console.warn('[Auth Store] Server returned success but no user - keeping existing state')
+              // 응답은 성공했지만 user가 없는 경우 - localStorage user 유지
+              console.warn('[Auth Store] Server returned success but no user - keeping localStorage user')
               set({ loading: false, hydrated: true })
-              // ⚠️ Don't clear localStorage here - might be a temporary server issue
             }
           } else if (response.status === 401) {
             // 명확한 인증 실패 - localStorage 정리
@@ -104,16 +94,14 @@ export const useAuthStore = create<AuthState>()(
             set({ user: null, loading: false, hydrated: true })
             localStorage.removeItem('auth-storage-v2')
           } else {
-            // 기타 에러 (500 등) - 현재 상태 유지
-            console.warn('[Auth Store] Server error:', response.status, '- keeping existing state')
+            // 기타 에러 (500 등) - localStorage user 유지
+            console.warn('[Auth Store] Server error:', response.status, '- keeping localStorage user')
             set({ loading: false, hydrated: true })
-            // ⚠️ Don't clear on server errors - might be temporary
           }
         } catch (error) {
-          // 네트워크 에러 등 - 현재 상태 유지
-          console.error('[Auth Store] Initialization error:', error, '- keeping existing state')
+          // 네트워크 에러 등 - localStorage user 유지
+          console.error('[Auth Store] Initialization error:', error, '- keeping localStorage user')
           set({ loading: false, hydrated: true })
-          // ⚠️ Don't clear on network errors - might be temporary
         }
       },
 

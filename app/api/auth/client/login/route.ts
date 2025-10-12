@@ -34,22 +34,23 @@ export async function POST(request: NextRequest) {
       console.log('[Client Login] Setting JWT token for user:', result.user?.id)
       console.log('[Client Login] Token length:', result.token.length)
       console.log('[Client Login] NODE_ENV:', process.env.NODE_ENV)
-      console.log('[Client Login] Cookie settings:', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 24 * 60 * 60,
-        path: '/'
-      })
 
-      response.cookies.set('auth-token', result.token, {
+      const cookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'lax' as const,
         maxAge: 24 * 60 * 60, // 24시간
         path: '/'
-      })
+      }
 
+      console.log('[Client Login] Cookie settings:', cookieOptions)
+      console.log('[Client Login] Request headers host:', request.headers.get('host'))
+
+      response.cookies.set('auth-token', result.token, cookieOptions)
+
+      // 🔍 Verify cookie was set
+      const setCookieHeader = response.headers.get('set-cookie')
+      console.log('[Client Login] Set-Cookie header:', setCookieHeader)
       console.log('[Client Login] JWT token set in cookie successfully')
     }
 
