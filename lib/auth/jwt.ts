@@ -105,7 +105,7 @@ export class JWTService {
       cookieStore.set('auth-token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax', // strict에서 lax로 변경 - Vercel 배포 환경 호환성
         maxAge: maxAge,
         path: '/'
       })
