@@ -9,6 +9,7 @@ import { LoginBottomSheet } from "@/components/auth/login-prompt"
 import { useAuthHydration } from "@/hooks/use-auth-hydration"
 import { AccountSwitchModal } from "@/components/auth/account-switch-modal"
 import { useAuth } from "@/stores/auth-store"
+import BottomSheet from "@/components/ui/bottom-sheet"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
@@ -29,6 +30,7 @@ export default function HomePage() {
   const { signOut } = useAuth()
   const [showLoginSheet, setShowLoginSheet] = useState(false)
   const [showSwitchModal, setShowSwitchModal] = useState(false)
+  const [showGuideSheet, setShowGuideSheet] = useState(false)
   const [loginSheetConfig, setLoginSheetConfig] = useState({
     title: "로그인이 필요해요",
     message: "이 기능을 사용하려면 로그인이 필요합니다."
@@ -88,7 +90,7 @@ export default function HomePage() {
 
   const handleKnifeRequest = () => {
     navigateWithAuth(
-      "/client/knife-request", 
+      "/client/knife-request",
       "/client/knife-request", // 게스트도 접근 가능
       false // 로그인 강제하지 않음
     )
@@ -99,7 +101,7 @@ export default function HomePage() {
   }
 
   const handleGuide = () => {
-    router.push("/client/guide")
+    setShowGuideSheet(true)
   }
 
   const handleEvent = () => {
@@ -358,6 +360,35 @@ export default function HomePage() {
         title={loginSheetConfig.title}
         message={loginSheetConfig.message}
       />
+
+      {/* 가이드 바텀시트 */}
+      <BottomSheet
+        isOpen={showGuideSheet}
+        onClose={() => setShowGuideSheet(false)}
+        className="max-h-[400px]"
+      >
+        <div className="flex flex-col gap-6 p-6">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17 3C17.5304 2.46957 18.2492 2.16963 19 2.16963C19.7508 2.16963 20.4696 2.46957 21 3C21.5304 3.53043 21.8304 4.24924 21.8304 5C21.8304 5.75076 21.5304 6.46957 21 7L7.5 20.5L2 22L3.5 16.5L17 3Z" stroke="#E67E22" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold mb-2">조금만 기다려 주세요!</h3>
+            <p className="text-gray-600 text-sm">
+              가이드도 연마중입니다. :)
+            </p>
+          </div>
+          <div className="space-y-3">
+            <button
+              onClick={() => setShowGuideSheet(false)}
+              className="w-full bg-orange-500 text-white rounded-lg py-4 font-medium"
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
 
       {/* 계정 전환 모달 */}
       {showSwitchModal && authUser && (

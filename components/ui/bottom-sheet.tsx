@@ -49,7 +49,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 bg-black/50 z-[60]"
             onClick={onClose}
           />
 
@@ -63,7 +63,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
               ease: [0.32, 0.72, 0, 1] // custom easing for smooth feel
             }}
             className={cn(
-              "fixed bottom-0 left-0 right-0 z-50",
+              "fixed bottom-0 left-0 right-0 z-[70]",
               "bg-white rounded-t-[30px]",
               "shadow-2xl",
               "max-w-[500px] mx-auto",
