@@ -44,8 +44,25 @@ export default function KnifeRequest({
   // 시간대 옵션 (9시부터 18시까지)
   const timeSlotOptions = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
 
-  // 초기 날짜 및 시간 설정
+  // 초기 날짜 및 시간 설정 + localStorage에서 복원
   useEffect(() => {
+    // localStorage에서 이전 상태 복원 시도
+    const savedState = localStorage.getItem('knife-request-temp-state')
+    if (savedState) {
+      try {
+        const { date, timeSlot, knives } = JSON.parse(savedState)
+        if (date) setSelectedDate(new Date(date))
+        if (timeSlot) setSelectedTimeSlot(timeSlot)
+        if (knives) setKnifeSelections(knives)
+        // 복원 후 localStorage 삭제
+        localStorage.removeItem('knife-request-temp-state')
+        return
+      } catch (e) {
+        console.error('Failed to restore state:', e)
+      }
+    }
+
+    // localStorage에 저장된 상태가 없으면 기본값 설정
     const now = new Date()
     const currentHour = now.getHours()
 
@@ -161,6 +178,14 @@ export default function KnifeRequest({
   // 다음 단계로 이동
   const handleSubmit = () => {
     if (!isAuthenticated || !user?.id) {
+      // 로그인 페이지로 이동하기 전에 현재 상태를 localStorage에 저장
+      const tempState = {
+        date: selectedDate?.toISOString(),
+        timeSlot: selectedTimeSlot,
+        knives: knifeSelections
+      }
+      localStorage.setItem('knife-request-temp-state', JSON.stringify(tempState))
+
       toast.error('로그인이 필요한 서비스입니다.')
       router.push('/client/login')
       return
