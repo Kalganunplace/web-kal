@@ -191,7 +191,12 @@ export function DaumAddressSearchBottomSheet({
   }
 
   const handleSave = () => {
-    const isValid = Boolean(selectedAddress.address && selectedAddress.name)
+    // TC0027: 상세주소 필수 체크 추가
+    const isValid = Boolean(
+      selectedAddress.address &&
+      selectedAddress.name &&
+      (showDetailAddress ? selectedAddress.detailAddress : true)
+    )
     const isSupported = !addressError
 
     if (isValid && isSupported) {
@@ -266,7 +271,7 @@ export function DaumAddressSearchBottomSheet({
             {showDetailAddress && (
               <div>
                 <Label htmlFor="detailAddress" className="text-sm font-medium text-gray-700 mb-2 block">
-                  상세 주소 (선택사항)
+                  상세 주소 (필수)
                 </Label>
                 <input
                   id="detailAddress"
@@ -291,11 +296,11 @@ export function DaumAddressSearchBottomSheet({
               <Button
                 onClick={handleSave}
                 className={`flex-1 h-12 rounded-lg text-sm font-bold transition-colors ${
-                  !selectedAddress.address || !selectedAddress.name || addressError
+                  !selectedAddress.address || !selectedAddress.name || (showDetailAddress && !selectedAddress.detailAddress) || addressError
                     ? "bg-gray-400 text-white cursor-not-allowed"
                     : "bg-[#E67E22] hover:bg-[#D35400] text-white"
                 }`}
-                disabled={!selectedAddress.address || !selectedAddress.name || !!addressError}
+                disabled={!selectedAddress.address || !selectedAddress.name || (showDetailAddress && !selectedAddress.detailAddress) || !!addressError}
               >
                 저장
               </Button>
