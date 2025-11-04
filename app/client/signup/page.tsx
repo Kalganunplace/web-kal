@@ -70,6 +70,7 @@ export default function SignupPage() {
   const [canResendVerification, setCanResendVerification] = useState(false)
   const [loading, setLoading] = useState(false)
   const [verificationSent, setVerificationSent] = useState(false)
+  const [resendCount, setResendCount] = useState(0) // 재전송 카운터 (TC0019)
 
   // 입력 값 변경 핸들러
   const handleInputChange = (field: FormField, value: string) => {
@@ -94,13 +95,15 @@ export default function SignupPage() {
       }))
     }
 
-    if (field === "verification" && value.length > 0) {
-      const isValid = /^\d{6}$/.test(value)
-      setValidation(prev => ({ ...prev, verification: isValid ? "valid" : "invalid" }))
-      setErrors(prev => ({
-        ...prev,
-        verification: isValid ? "" : "잘못된 인증번호입니다. 다시 입력해 주세요"
-      }))
+    // 인증번호 입력 시에는 6자리인지만 체크 (에러 메시지는 표시하지 않음)
+    if (field === "verification") {
+      if (value.length === 6 && /^\d{6}$/.test(value)) {
+        setValidation(prev => ({ ...prev, verification: "valid" }))
+      } else {
+        setValidation(prev => ({ ...prev, verification: "none" }))
+      }
+      // 입력 중에는 에러를 표시하지 않음
+      setErrors(prev => ({ ...prev, verification: "" }))
     }
   }
 
@@ -145,6 +148,12 @@ export default function SignupPage() {
           setVerificationTimer(180)
           setCanResendVerification(false)
           setVerificationSent(true)
+
+          // 인증번호 입력 섹션 초기화 (TC0019)
+          setFormData(prev => ({ ...prev, verification: "" }))
+          setErrors(prev => ({ ...prev, verification: "" }))
+          setValidation(prev => ({ ...prev, verification: "none" }))
+          setResendCount(prev => prev + 1) // 재전송 카운터 증가
 
           // 타이머 시작
           const timer = setInterval(() => {
@@ -209,21 +218,23 @@ export default function SignupPage() {
     const requiredTerms = terms.service && terms.privacy && terms.location && terms.identity
     if (requiredTerms && validation.verification === "valid") {
       setLoading(true)
-      
+
       try {
         const cleanPhone = formData.phone.replace(/-/g, '')
         const result = await signUpClient(cleanPhone, formData.name, formData.verification)
-        
+
         if (result.success) {
           setShowTerms(false)
           router.push("/") // 홈으로 이동
         } else {
-          setErrors(prev => ({ ...prev, verification: result.error || "회원가입에 실패했습니다." }))
-          setValidation(prev => ({ ...prev, verification: "invalid" }))
+          // 바텀시트를 닫고 인증번호 입력 화면으로 돌아가서 에러 표시
+          setShowTerms(false)
+          setErrors(prev => ({ ...prev, verification: "잘못된 인증번호입니다. 다시 입력해 주세요" }))
         }
       } catch (error) {
+        // 바텀시트를 닫고 인증번호 입력 화면으로 돌아가서 에러 표시
+        setShowTerms(false)
         setErrors(prev => ({ ...prev, verification: "회원가입 처리 중 오류가 발생했습니다." }))
-        setValidation(prev => ({ ...prev, verification: "invalid" }))
       } finally {
         setLoading(false)
       }
@@ -301,10 +312,11 @@ export default function SignupPage() {
 
         {/* 인증번호 입력 (verification 단계에서만 표시) */}
         {step === "verification" && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2" key={resendCount}>
             <BodyMedium color="#333333">인증번호를 입력해 주세요</BodyMedium>
             <div className="relative">
               <input
+                key={`verification-${resendCount}`}
                 type="text"
                 placeholder="인증번호 6자리"
                 value={formData.verification}
@@ -314,11 +326,11 @@ export default function SignupPage() {
                 maxLength={6}
                 className={`w-full h-12 px-5 rounded-[10px] border-2 outline-none text-sm font-bold text-[#333333] placeholder:text-[#B0B0B0] ${
                   focusedField === "verification" ? "border-[#E67E22] bg-white" :
-                  validation.verification === "invalid" ? "border-[#FF4500] bg-white" :
+                  errors.verification ? "border-[#FF4500] bg-white" :
                   "border-[#D9D9D9] bg-white"
                 }`}
               />
-              {validation.verification === "invalid" && (
+              {errors.verification && (
                 <div className="mt-1">
                   <CaptionLarge color="#FF4500">{errors.verification}</CaptionLarge>
                 </div>
