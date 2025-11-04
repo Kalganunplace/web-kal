@@ -245,7 +245,7 @@ export default function SignupPage() {
   return (
     <div className="flex flex-col min-h-screen bg-white relative">
       {/* TopBanner */}
-      <TopBanner title="회원가입" onBack={() => router.back()} />
+      <TopBanner title="회원가입" onBackClick={() => router.push('/client/login')} />
 
       {/* Form Content */}
       <div className="flex flex-col gap-5 px-5 py-5 flex-1">
