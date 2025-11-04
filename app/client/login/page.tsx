@@ -56,9 +56,50 @@ export default function LoginPage() {
     }
   }, [step, timer])
 
+  // 전화번호 유효성 검사 함수
+  const validatePhoneNumber = (phoneNumber: string): string | null => {
+    const digitsOnly = phoneNumber.replace(/[^0-9]/g, '')
+
+    if (!digitsOnly) {
+      return null // 빈 입력은 에러 표시 안 함
+    }
+
+    if (!digitsOnly.startsWith('010')) {
+      return '010으로 시작하는 번호를 입력해주세요.'
+    }
+
+    if (digitsOnly.length < 11) {
+      return '전화번호는 11자리여야 합니다.'
+    }
+
+    if (digitsOnly.length > 11) {
+      return '전화번호는 11자리를 초과할 수 없습니다.'
+    }
+
+    return null // 유효한 번호
+  }
+
+  // 전화번호 변경 시 실시간 유효성 검사
+  const handlePhoneChange = (value: string) => {
+    setPhone(value)
+    const validationError = validatePhoneNumber(value)
+    if (validationError) {
+      setError(validationError)
+    } else {
+      setError('') // 유효하면 에러 메시지 제거
+    }
+  }
+
   const handleSendVerification = async () => {
     if (!phone.trim()) {
       setError("전화번호를 입력해주세요.")
+      return
+    }
+
+    // 최종 유효성 검사
+    const validationError = validatePhoneNumber(phone)
+    if (validationError) {
+      setError(validationError)
       return
     }
 
@@ -198,7 +239,7 @@ export default function LoginPage() {
                     type="tel"
                     placeholder="010-1234-5678"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
                     disabled={loading}
                     className="text-lg h-12"
                   />
