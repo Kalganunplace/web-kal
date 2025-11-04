@@ -346,21 +346,17 @@ export default function SignupPage() {
 
         {step === "verification" && (
           <>
-            {canResendVerification ? (
-              <button
-                onClick={handleSendVerification}
-                className="w-full h-14 rounded-lg bg-[#F2F2F2] text-[#E67E22] font-bold text-lg shadow-[0px_5px_30px_0px_rgba(0,0,0,0.1)]"
-              >
-                인증번호 재전송
-              </button>
-            ) : (
-              <button
-                disabled
-                className="w-full h-14 rounded-lg bg-[#B0B0B0] text-white font-bold text-lg"
-              >
-                {formatTimer(verificationTimer)} 후 인증번호 재전송
-              </button>
-            )}
+            <button
+              onClick={handleSendVerification}
+              disabled={!canResendVerification}
+              className={`w-full h-14 rounded-lg font-bold text-lg border-2 ${
+                canResendVerification
+                  ? "border-[#E67E22] bg-white text-[#E67E22] shadow-[0px_5px_30px_0px_rgba(0,0,0,0.1)]"
+                  : "border-[#B0B0B0] bg-white text-[#B0B0B0]"
+              }`}
+            >
+              {canResendVerification ? "인증번호 재전송" : `${formatTimer(verificationTimer)} 후 인증번호 재전송`}
+            </button>
 
             <button
               onClick={handleStart}
