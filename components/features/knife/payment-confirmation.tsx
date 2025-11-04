@@ -17,6 +17,7 @@ import { addressService, type Address } from "@/lib/address-service"
 import { paymentSettingsService, type PaymentSettings } from "@/lib/payment-settings-service"
 import { couponService, type UserCoupon } from "@/lib/coupon-service"
 import PaymentBottomSheet from "./payment-bottom-sheet"
+import AddressSelectionBottomSheet from "@/components/common/address-selection-bottom-sheet"
 
 export default function PaymentConfirmation() {
   const router = useRouter()
@@ -25,12 +26,14 @@ export default function PaymentConfirmation() {
 
   const [knifeTypes, setKnifeTypes] = useState<KnifeType[]>([])
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null)
+  const [userAddresses, setUserAddresses] = useState<Address[]>([])
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null)
   const [availableCoupons, setAvailableCoupons] = useState<UserCoupon[]>([])
   const [selectedCoupon, setSelectedCoupon] = useState<UserCoupon | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPaymentBottomSheet, setShowPaymentBottomSheet] = useState(false)
+  const [showAddressSelectionSheet, setShowAddressSelectionSheet] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<'simple' | 'deposit'>('deposit')
 
   // 데이터 검증 및 로드
@@ -62,6 +65,7 @@ export default function PaymentConfirmation() {
         // 사용자 주소 로드
         try {
           const addresses = await addressService.getUserAddresses(user.id)
+          setUserAddresses(addresses)
           const defaultAddr = addresses.find(addr => addr.is_default) || addresses[0]
           if (defaultAddr) {
             setSelectedAddress(defaultAddr)
@@ -262,7 +266,7 @@ export default function PaymentConfirmation() {
               </div>
 
               <button
-                onClick={() => router.push('/client/address-settings')}
+                onClick={() => setShowAddressSelectionSheet(true)}
                 className="w-full mt-3 py-3 bg-white border border-[#E67E22] text-[#E67E22] rounded-lg font-medium"
               >
                 주소 변경하기
@@ -426,6 +430,15 @@ export default function PaymentConfirmation() {
         {/* Spacer for bottom navigation */}
         <div className="h-20" />
       </div>
+
+      {/* 주소 선택 바텀시트 */}
+      <AddressSelectionBottomSheet
+        isOpen={showAddressSelectionSheet}
+        onClose={() => setShowAddressSelectionSheet(false)}
+        addresses={userAddresses}
+        selectedAddressId={selectedAddress?.id}
+        onSelect={(address) => setSelectedAddress(address)}
+      />
 
       {/* 결제 바텀시트 */}
       {paymentSettings && (
