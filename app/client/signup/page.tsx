@@ -300,7 +300,23 @@ export default function SignupPage() {
   // 회원가입 완료
   const handleSignupComplete = async () => {
     const requiredTerms = terms.service && terms.privacy && terms.location && terms.identity
-    if (requiredTerms && validation.verification === "valid") {
+
+    if (!requiredTerms) {
+      return
+    }
+
+    // 인증번호 제한시간 확인 (TC0024)
+    if (verificationTimer <= 0) {
+      setShowTerms(false)
+      setErrors(prev => ({ ...prev, verification: "인증번호 유효시간이 만료되었습니다. 다시 인증해주세요." }))
+      setValidation(prev => ({ ...prev, verification: "none" }))
+      setIsVerified(false)
+      setFormData(prev => ({ ...prev, verification: "" }))
+      return
+    }
+
+    // isVerified 상태도 확인 (약관에서 돌아온 경우 대응)
+    if (validation.verification === "valid" || isVerified) {
       setLoading(true)
 
       try {
@@ -313,16 +329,19 @@ export default function SignupPage() {
           sessionStorage.removeItem('signup-verification-state')
 
           setShowTerms(false)
-          router.push("/") // 홈으로 이동
+          // TC0024: 칼갈이 신청 페이지로 리다이렉트
+          router.push("/client/knife-request")
         } else {
           // 바텀시트를 닫고 인증번호 입력 화면으로 돌아가서 에러 표시
           setShowTerms(false)
           setErrors(prev => ({ ...prev, verification: "잘못된 인증번호입니다. 다시 입력해 주세요" }))
+          setIsVerified(false)
         }
       } catch (error) {
         // 바텀시트를 닫고 인증번호 입력 화면으로 돌아가서 에러 표시
         setShowTerms(false)
         setErrors(prev => ({ ...prev, verification: "회원가입 처리 중 오류가 발생했습니다." }))
+        setIsVerified(false)
       } finally {
         setLoading(false)
       }
