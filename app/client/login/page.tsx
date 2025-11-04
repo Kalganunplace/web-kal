@@ -265,16 +265,6 @@ export default function LoginPage() {
               </CardContent>
             </Card>
 
-            {/* 게스트 이용 */}
-            <div className="text-center pt-4">
-              <button
-                onClick={() => router.push("/")}
-                className="text-orange-500 hover:text-orange-600 font-medium"
-              >
-                로그인 없이 둘러보기
-              </button>
-            </div>
-
             {/* 회원가입 링크 */}
             <div className="text-center">
               <span className="text-gray-600">계정이 없으신가요? </span>
