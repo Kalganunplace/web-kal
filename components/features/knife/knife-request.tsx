@@ -46,6 +46,27 @@ export default function KnifeRequest({
   // 시간대 옵션 (9시부터 18시까지)
   const timeSlotOptions = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
 
+  // 초기 날짜 및 시간 설정
+  useEffect(() => {
+    const now = new Date()
+    const currentHour = now.getHours()
+
+    // 현재 날짜를 기본값으로 설정
+    setSelectedDate(now)
+
+    // 현재 시간에 따라 가장 가까운 이후 시간으로 설정
+    const nextAvailableHour = timeSlotOptions.find(hour => hour > currentHour)
+    if (nextAvailableHour) {
+      setSelectedTimeSlot(nextAvailableHour)
+    } else {
+      // 오늘 예약 가능한 시간이 없으면 다음 날 첫 시간으로 설정
+      const tomorrow = new Date(now)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      setSelectedDate(tomorrow)
+      setSelectedTimeSlot(timeSlotOptions[0]) // 9:00
+    }
+  }, [])
+
   // 데이터 로드
   useEffect(() => {
     const loadData = async () => {
