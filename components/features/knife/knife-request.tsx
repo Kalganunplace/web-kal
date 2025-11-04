@@ -350,7 +350,7 @@ export default function KnifeRequest({
             <span className="text-base font-bold text-gray-800">총 수량 {totalQuantity}개</span>
             <div className="text-right">
               <p className="text-lg font-bold text-gray-800">총 금액: {knifeService.formatPrice(totalAmount)}</p>
-              <p className="text-xs text-gray-500">쿠폰제 별도</p>
+              <p className="text-xs text-gray-500">부가세 별도</p>
             </div>
           </div>
         )}
