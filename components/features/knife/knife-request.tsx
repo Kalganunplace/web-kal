@@ -67,6 +67,31 @@ export default function KnifeRequest({
     }
   }, [])
 
+  // 날짜 변경 시 시간 자동 조정
+  const handleDateChange = (date: Date | undefined) => {
+    if (!date) return
+
+    const now = new Date()
+    const isToday = date.toDateString() === now.toDateString()
+
+    setSelectedDate(date)
+
+    if (isToday) {
+      // 오늘 날짜 선택 시: 현재 시간 이후의 가장 가까운 시간으로 설정
+      const currentHour = now.getHours()
+      const nextAvailableHour = timeSlotOptions.find(hour => hour > currentHour)
+      if (nextAvailableHour) {
+        setSelectedTimeSlot(nextAvailableHour)
+      } else {
+        // 오늘 예약 가능한 시간이 없으면 첫 시간으로
+        setSelectedTimeSlot(timeSlotOptions[0])
+      }
+    } else {
+      // 오늘이 아닌 다른 날짜 선택 시: 정오 12:00으로 설정
+      setSelectedTimeSlot(12)
+    }
+  }
+
   // 데이터 로드
   useEffect(() => {
     const loadData = async () => {
@@ -218,7 +243,7 @@ export default function KnifeRequest({
           {/* 날짜 선택 */}
           <DatePicker
             selectedDate={selectedDate}
-            onDateSelect={setSelectedDate}
+            onDateSelect={handleDateChange}
             placeholder="날짜를 선택해주세요"
           />
 
