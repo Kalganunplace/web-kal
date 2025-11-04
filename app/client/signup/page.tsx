@@ -5,7 +5,7 @@ import { ChevronRightIcon } from "@/components/ui/icon"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, BodySmall, CaptionLarge } from "@/components/ui/typography"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "@/lib/auth/supabase"
 import { useAuth } from "@/stores/auth-store"
 
@@ -71,6 +71,53 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [verificationSent, setVerificationSent] = useState(false)
   const [resendCount, setResendCount] = useState(0) // 재전송 카운터 (TC0019)
+  const [isVerified, setIsVerified] = useState(false) // 인증 완료 상태
+
+  // 페이지 마운트 시 저장된 인증 상태 복원
+  useEffect(() => {
+    const savedFormData = sessionStorage.getItem('signup-form-data')
+    const savedVerificationState = sessionStorage.getItem('signup-verification-state')
+
+    if (savedFormData) {
+      try {
+        const parsed = JSON.parse(savedFormData)
+        setFormData(parsed)
+      } catch (e) {
+        console.error('Failed to parse saved form data:', e)
+      }
+    }
+
+    if (savedVerificationState) {
+      try {
+        const parsed = JSON.parse(savedVerificationState)
+        setIsVerified(parsed.isVerified)
+        setVerificationSent(parsed.verificationSent)
+        if (parsed.validation) {
+          setValidation(parsed.validation)
+        }
+      } catch (e) {
+        console.error('Failed to parse saved verification state:', e)
+      }
+    }
+  }, [])
+
+  // 폼 데이터 변경 시 저장
+  useEffect(() => {
+    if (formData.name || formData.phone || formData.verification) {
+      sessionStorage.setItem('signup-form-data', JSON.stringify(formData))
+    }
+  }, [formData])
+
+  // 인증 상태 변경 시 저장
+  useEffect(() => {
+    if (isVerified) {
+      sessionStorage.setItem('signup-verification-state', JSON.stringify({
+        isVerified,
+        verificationSent,
+        validation
+      }))
+    }
+  }, [isVerified, verificationSent, validation])
 
   // 입력 값 변경 핸들러
   const handleInputChange = (field: FormField, value: string) => {
@@ -201,10 +248,47 @@ export default function SignupPage() {
     }
   }
 
-  // 시작하기 버튼
-  const handleStart = () => {
-    if (validation.verification === "valid") {
+  // 시작하기 버튼 - 인증번호 검증 후 약관 바텀시트 열기
+  const handleStart = async () => {
+    // 이미 인증 완료된 경우 바로 약관 바텀시트 열기
+    if (isVerified) {
       setShowTerms(true)
+      return
+    }
+
+    if (validation.verification === "valid") {
+      setLoading(true)
+
+      try {
+        const cleanPhone = formData.phone.replace(/-/g, '')
+
+        // 서버에서 인증번호 검증
+        const response = await fetch('/api/auth/client/verify-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: cleanPhone,
+            code: formData.verification
+          })
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+          // 인증번호가 정상이면 인증 완료 상태로 설정하고 약관 바텀시트 열기
+          setIsVerified(true)
+          setShowTerms(true)
+        } else {
+          // 인증번호가 틀리면 에러 표시
+          setErrors(prev => ({ ...prev, verification: "잘못된 인증번호입니다. 다시 입력해 주세요" }))
+          setValidation(prev => ({ ...prev, verification: "none" }))
+        }
+      } catch (error) {
+        setErrors(prev => ({ ...prev, verification: "인증번호 확인 중 오류가 발생했습니다." }))
+        setValidation(prev => ({ ...prev, verification: "none" }))
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -224,6 +308,10 @@ export default function SignupPage() {
         const result = await signUpClient(cleanPhone, formData.name, formData.verification)
 
         if (result.success) {
+          // 회원가입 완료 시 저장된 데이터 초기화
+          sessionStorage.removeItem('signup-form-data')
+          sessionStorage.removeItem('signup-verification-state')
+
           setShowTerms(false)
           router.push("/") // 홈으로 이동
         } else {
@@ -243,7 +331,7 @@ export default function SignupPage() {
 
   // 버튼 활성화 상태
   const isVerificationButtonEnabled = validation.name === "valid" && validation.phone === "valid"
-  const isStartButtonEnabled = validation.verification === "valid"
+  const isStartButtonEnabled = validation.verification === "valid" || isVerified
   const isConfirmButtonEnabled = terms.service && terms.privacy && terms.location && terms.identity
 
   // 타이머 형식 변환
@@ -451,7 +539,17 @@ export default function SignupPage() {
                   </button>
                   <BodySmall color="#333333">{term.text}</BodySmall>
                 </div>
-                <ChevronRightIcon size={24} className="text-[#767676]" />
+                <button
+                  onClick={() => {
+                    setShowTerms(false)
+                    setTimeout(() => {
+                      router.push(`/client/terms-detail?tab=${term.key}`)
+                    }, 100)
+                  }}
+                  className="flex items-center"
+                >
+                  <ChevronRightIcon size={24} className="text-[#767676]" />
+                </button>
               </div>
             ))}
           </div>
