@@ -47,6 +47,10 @@ export default function LoginPage() {
             setCanResend(true)
             return 0
           }
+          // 재발송 버튼은 2분(120초) 남았을 때 활성화 (1분 경과 후)
+          if (prev === 120) {
+            setCanResend(true)
+          }
           return prev - 1
         })
       }, 1000)
