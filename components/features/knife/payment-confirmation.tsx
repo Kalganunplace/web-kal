@@ -49,9 +49,14 @@ export default function PaymentConfirmation() {
         return
       }
 
-      if (!bookingData) {
+      // 제출 중일 때는 리다이렉트하지 않음 (페이지 이동 처리 중)
+      if (!bookingData && !isSubmitting) {
         toast.error('예약 정보가 없습니다.')
         router.push('/client/knife-request')
+        return
+      }
+
+      if (!bookingData) {
         return
       }
 
@@ -101,7 +106,7 @@ export default function PaymentConfirmation() {
     }
 
     loadData()
-  }, [isAuthenticated, user?.id, bookingData, router])
+  }, [isAuthenticated, user?.id, bookingData, isSubmitting, router])
 
   if (!bookingData) {
     return null
@@ -191,14 +196,17 @@ export default function PaymentConfirmation() {
       // TODO: depositorName을 예약에 포함
       await bookingService.createBooking(user.id, bookingData)
 
+      toast.success('예약이 성공적으로 접수되었습니다!')
+
+      // 페이지 이동 전에 상태 정리
       clearBooking()
       setShowPaymentBottomSheet(false)
-      toast.success('예약이 성공적으로 접수되었습니다!')
-      router.push('/client/usage-history')
+
+      // replace를 사용하여 뒤로가기 방지 및 확실한 페이지 이동
+      router.replace('/client/usage-history')
     } catch (error) {
       console.error('예약 생성 실패:', error)
       toast.error('예약 접수 중 오류가 발생했습니다.')
-    } finally {
       setIsSubmitting(false)
     }
   }
