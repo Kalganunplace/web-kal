@@ -200,11 +200,8 @@ class SupabaseAuthClient {
   async signUp(phone: string, name: string, verificationCode: string): Promise<AuthResponse> {
     const formattedPhone = this.formatPhone(phone)
 
-    // 인증번호 검증
-    const verification = await this.verifyCode(formattedPhone, verificationCode)
-    if (!verification.success) {
-      return { success: false, error: verification.error }
-    }
+    // 인증번호는 이미 verify-code API에서 검증되었으므로 여기서는 검증하지 않음
+    // (검증하면 이미 사용된 코드로 인식되어 실패함)
 
     try {
       // 기존 사용자 확인

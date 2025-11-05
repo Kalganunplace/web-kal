@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, BodySmall, Heading3 } from "@/components/ui/typography"
 
@@ -13,7 +13,16 @@ interface TermSection {
 
 export default function TermsDetailPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<string>("service")
+
+  // URL 파라미터로 탭 설정 (TC0023)
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['service', 'privacy', 'location', 'identity', 'marketing', 'ads'].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   // TODO: 나중에 Supabase에서 가져오기
   const terms: Record<string, TermSection[]> = {
@@ -66,21 +75,72 @@ export default function TermsDetailPage() {
         content: "회사는 이용자의 개인정보를 원칙적으로 외부에 제공하지 않습니다. 다만, 아래의 경우에는 예외로 합니다.\n1. 이용자가 사전에 동의한 경우\n2. 법령의 규정에 의거하거나, 수사 목적으로 법령에 정해진 절차와 방법에 따라 수사기관의 요구가 있는 경우"
       }
     ],
-    payment: [
+    location: [
       {
         id: "1",
-        title: "제1조 (결제 방법)",
-        content: "서비스 이용료는 다음과 같은 방법으로 결제할 수 있습니다.\n1. 신용카드 결제\n2. 계좌이체\n3. 쿠폰 사용"
+        title: "제1조 (위치정보 수집 목적)",
+        content: "회사는 다음의 목적으로 위치정보를 수집합니다.\n1. 칼 수거 및 배송 서비스 제공\n2. 서비스 제공자(기사) 배정 및 경로 안내\n3. 서비스 이용 현황 통계 및 분석"
       },
       {
         id: "2",
-        title: "제2조 (환불 정책)",
-        content: "1. 서비스 수거 전 취소: 전액 환불\n2. 서비스 진행 중 취소: 작업 진행 정도에 따라 부분 환불\n3. 서비스 완료 후 취소: 환불 불가 (단, 회사의 과실인 경우 전액 환불)"
+        title: "제2조 (위치정보 수집 방법)",
+        content: "회사는 이용자가 서비스 신청 시 직접 입력한 주소 정보를 수집합니다. GPS 등 자동으로 위치정보를 수집하지 않습니다."
       },
       {
         id: "3",
-        title: "제3조 (쿠폰 사용)",
-        content: "1. 쿠폰은 발급일로부터 유효기간 내에만 사용 가능합니다.\n2. 쿠폰은 현금으로 환불되지 않습니다.\n3. 중복 사용이 불가능한 쿠폰의 경우, 하나의 주문에 하나의 쿠폰만 적용됩니다."
+        title: "제3조 (위치정보 보유 기간)",
+        content: "회사는 위치정보를 서비스 제공 목적으로만 이용하며, 서비스 완료 후 1년간 보관한 뒤 파기합니다."
+      }
+    ],
+    identity: [
+      {
+        id: "1",
+        title: "제1조 (본인확인 목적)",
+        content: "회사는 서비스 이용자의 본인 여부를 확인하기 위해 휴대전화 인증을 실시합니다."
+      },
+      {
+        id: "2",
+        title: "제2조 (본인확인 방법)",
+        content: "회원가입 시 휴대전화번호로 전송된 인증번호를 입력하여 본인 확인을 완료합니다."
+      },
+      {
+        id: "3",
+        title: "제3조 (본인확인 정보의 보호)",
+        content: "회사는 본인확인을 위해 수집한 정보를 본인확인 목적 외에는 사용하지 않으며, 관련 법령에 따라 안전하게 보관합니다."
+      }
+    ],
+    marketing: [
+      {
+        id: "1",
+        title: "제1조 (마케팅 정보 수신 동의)",
+        content: "이용자는 회사가 제공하는 이벤트, 프로모션, 신규 서비스 등의 마케팅 정보를 수신하는 것에 동의할 수 있습니다."
+      },
+      {
+        id: "2",
+        title: "제2조 (정보 전송 방법)",
+        content: "마케팅 정보는 SMS, 이메일, 앱 푸시 알림 등의 방법으로 전송될 수 있습니다."
+      },
+      {
+        id: "3",
+        title: "제3조 (동의 철회)",
+        content: "이용자는 언제든지 마케팅 정보 수신 동의를 철회할 수 있으며, 회원정보 수정 페이지 또는 고객센터를 통해 철회할 수 있습니다."
+      }
+    ],
+    ads: [
+      {
+        id: "1",
+        title: "제1조 (맞춤형 광고의 목적)",
+        content: "회사는 이용자의 서비스 이용 패턴을 분석하여 맞춤형 광고를 제공하기 위해 개인정보를 수집·이용합니다."
+      },
+      {
+        id: "2",
+        title: "제2조 (수집하는 정보)",
+        content: "회사는 다음의 정보를 수집합니다.\n1. 서비스 이용 내역\n2. 관심 카테고리\n3. 클릭 및 검색 기록"
+      },
+      {
+        id: "3",
+        title: "제3조 (광고 수신 거부)",
+        content: "이용자는 언제든지 맞춤형 광고 수신을 거부할 수 있으며, 설정 페이지에서 변경할 수 있습니다."
       }
     ]
   }

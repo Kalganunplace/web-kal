@@ -5,7 +5,7 @@ import { ChevronRightIcon } from "@/components/ui/icon"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, BodySmall, CaptionLarge } from "@/components/ui/typography"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "@/lib/auth/supabase"
 import { useAuth } from "@/stores/auth-store"
 
@@ -70,6 +70,54 @@ export default function SignupPage() {
   const [canResendVerification, setCanResendVerification] = useState(false)
   const [loading, setLoading] = useState(false)
   const [verificationSent, setVerificationSent] = useState(false)
+  const [resendCount, setResendCount] = useState(0) // 재전송 카운터 (TC0019)
+  const [isVerified, setIsVerified] = useState(false) // 인증 완료 상태
+
+  // 페이지 마운트 시 저장된 인증 상태 복원
+  useEffect(() => {
+    const savedFormData = sessionStorage.getItem('signup-form-data')
+    const savedVerificationState = sessionStorage.getItem('signup-verification-state')
+
+    if (savedFormData) {
+      try {
+        const parsed = JSON.parse(savedFormData)
+        setFormData(parsed)
+      } catch (e) {
+        console.error('Failed to parse saved form data:', e)
+      }
+    }
+
+    if (savedVerificationState) {
+      try {
+        const parsed = JSON.parse(savedVerificationState)
+        setIsVerified(parsed.isVerified)
+        setVerificationSent(parsed.verificationSent)
+        if (parsed.validation) {
+          setValidation(parsed.validation)
+        }
+      } catch (e) {
+        console.error('Failed to parse saved verification state:', e)
+      }
+    }
+  }, [])
+
+  // 폼 데이터 변경 시 저장
+  useEffect(() => {
+    if (formData.name || formData.phone || formData.verification) {
+      sessionStorage.setItem('signup-form-data', JSON.stringify(formData))
+    }
+  }, [formData])
+
+  // 인증 상태 변경 시 저장
+  useEffect(() => {
+    if (isVerified) {
+      sessionStorage.setItem('signup-verification-state', JSON.stringify({
+        isVerified,
+        verificationSent,
+        validation
+      }))
+    }
+  }, [isVerified, verificationSent, validation])
 
   // 입력 값 변경 핸들러
   const handleInputChange = (field: FormField, value: string) => {
@@ -94,13 +142,15 @@ export default function SignupPage() {
       }))
     }
 
-    if (field === "verification" && value.length > 0) {
-      const isValid = /^\d{6}$/.test(value)
-      setValidation(prev => ({ ...prev, verification: isValid ? "valid" : "invalid" }))
-      setErrors(prev => ({
-        ...prev,
-        verification: isValid ? "" : "잘못된 인증번호입니다. 다시 입력해 주세요"
-      }))
+    // 인증번호 입력 시에는 6자리인지만 체크 (에러 메시지는 표시하지 않음)
+    if (field === "verification") {
+      if (value.length === 6 && /^\d{6}$/.test(value)) {
+        setValidation(prev => ({ ...prev, verification: "valid" }))
+      } else {
+        setValidation(prev => ({ ...prev, verification: "none" }))
+      }
+      // 입력 중에는 에러를 표시하지 않음
+      setErrors(prev => ({ ...prev, verification: "" }))
     }
   }
 
@@ -145,6 +195,12 @@ export default function SignupPage() {
           setVerificationTimer(180)
           setCanResendVerification(false)
           setVerificationSent(true)
+
+          // 인증번호 입력 섹션 초기화 (TC0019)
+          setFormData(prev => ({ ...prev, verification: "" }))
+          setErrors(prev => ({ ...prev, verification: "" }))
+          setValidation(prev => ({ ...prev, verification: "none" }))
+          setResendCount(prev => prev + 1) // 재전송 카운터 증가
 
           // 타이머 시작
           const timer = setInterval(() => {
@@ -192,10 +248,47 @@ export default function SignupPage() {
     }
   }
 
-  // 시작하기 버튼
-  const handleStart = () => {
-    if (validation.verification === "valid") {
+  // 시작하기 버튼 - 인증번호 검증 후 약관 바텀시트 열기
+  const handleStart = async () => {
+    // 이미 인증 완료된 경우 바로 약관 바텀시트 열기
+    if (isVerified) {
       setShowTerms(true)
+      return
+    }
+
+    if (validation.verification === "valid") {
+      setLoading(true)
+
+      try {
+        const cleanPhone = formData.phone.replace(/-/g, '')
+
+        // 서버에서 인증번호 검증
+        const response = await fetch('/api/auth/client/verify-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: cleanPhone,
+            code: formData.verification
+          })
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+          // 인증번호가 정상이면 인증 완료 상태로 설정하고 약관 바텀시트 열기
+          setIsVerified(true)
+          setShowTerms(true)
+        } else {
+          // 인증번호가 틀리면 에러 표시
+          setErrors(prev => ({ ...prev, verification: "잘못된 인증번호입니다. 다시 입력해 주세요" }))
+          setValidation(prev => ({ ...prev, verification: "none" }))
+        }
+      } catch (error) {
+        setErrors(prev => ({ ...prev, verification: "인증번호 확인 중 오류가 발생했습니다." }))
+        setValidation(prev => ({ ...prev, verification: "none" }))
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -207,23 +300,48 @@ export default function SignupPage() {
   // 회원가입 완료
   const handleSignupComplete = async () => {
     const requiredTerms = terms.service && terms.privacy && terms.location && terms.identity
-    if (requiredTerms && validation.verification === "valid") {
+
+    if (!requiredTerms) {
+      return
+    }
+
+    // 인증번호 제한시간 확인 (TC0024)
+    if (verificationTimer <= 0) {
+      setShowTerms(false)
+      setErrors(prev => ({ ...prev, verification: "인증번호 유효시간이 만료되었습니다. 다시 인증해주세요." }))
+      setValidation(prev => ({ ...prev, verification: "none" }))
+      setIsVerified(false)
+      setFormData(prev => ({ ...prev, verification: "" }))
+      return
+    }
+
+    // isVerified 상태도 확인 (약관에서 돌아온 경우 대응)
+    if (validation.verification === "valid" || isVerified) {
       setLoading(true)
-      
+
       try {
         const cleanPhone = formData.phone.replace(/-/g, '')
         const result = await signUpClient(cleanPhone, formData.name, formData.verification)
-        
+
         if (result.success) {
+          // 회원가입 완료 시 저장된 데이터 초기화
+          sessionStorage.removeItem('signup-form-data')
+          sessionStorage.removeItem('signup-verification-state')
+
           setShowTerms(false)
-          router.push("/") // 홈으로 이동
+          // TC0024: 칼갈이 신청 페이지로 리다이렉트
+          router.push("/client/knife-request")
         } else {
-          setErrors(prev => ({ ...prev, verification: result.error || "회원가입에 실패했습니다." }))
-          setValidation(prev => ({ ...prev, verification: "invalid" }))
+          // 바텀시트를 닫고 인증번호 입력 화면으로 돌아가서 에러 표시
+          setShowTerms(false)
+          setErrors(prev => ({ ...prev, verification: "잘못된 인증번호입니다. 다시 입력해 주세요" }))
+          setIsVerified(false)
         }
       } catch (error) {
+        // 바텀시트를 닫고 인증번호 입력 화면으로 돌아가서 에러 표시
+        setShowTerms(false)
         setErrors(prev => ({ ...prev, verification: "회원가입 처리 중 오류가 발생했습니다." }))
-        setValidation(prev => ({ ...prev, verification: "invalid" }))
+        setIsVerified(false)
       } finally {
         setLoading(false)
       }
@@ -232,7 +350,7 @@ export default function SignupPage() {
 
   // 버튼 활성화 상태
   const isVerificationButtonEnabled = validation.name === "valid" && validation.phone === "valid"
-  const isStartButtonEnabled = validation.verification === "valid"
+  const isStartButtonEnabled = validation.verification === "valid" || isVerified
   const isConfirmButtonEnabled = terms.service && terms.privacy && terms.location && terms.identity
 
   // 타이머 형식 변환
@@ -245,7 +363,7 @@ export default function SignupPage() {
   return (
     <div className="flex flex-col min-h-screen bg-white relative">
       {/* TopBanner */}
-      <TopBanner title="회원가입" onBack={() => router.back()} />
+      <TopBanner title="회원가입" onBackClick={() => router.push('/client/login')} />
 
       {/* Form Content */}
       <div className="flex flex-col gap-5 px-5 py-5 flex-1">
@@ -301,10 +419,11 @@ export default function SignupPage() {
 
         {/* 인증번호 입력 (verification 단계에서만 표시) */}
         {step === "verification" && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2" key={resendCount}>
             <BodyMedium color="#333333">인증번호를 입력해 주세요</BodyMedium>
             <div className="relative">
               <input
+                key={`verification-${resendCount}`}
                 type="text"
                 placeholder="인증번호 6자리"
                 value={formData.verification}
@@ -314,11 +433,11 @@ export default function SignupPage() {
                 maxLength={6}
                 className={`w-full h-12 px-5 rounded-[10px] border-2 outline-none text-sm font-bold text-[#333333] placeholder:text-[#B0B0B0] ${
                   focusedField === "verification" ? "border-[#E67E22] bg-white" :
-                  validation.verification === "invalid" ? "border-[#FF4500] bg-white" :
+                  errors.verification ? "border-[#FF4500] bg-white" :
                   "border-[#D9D9D9] bg-white"
                 }`}
               />
-              {validation.verification === "invalid" && (
+              {errors.verification && (
                 <div className="mt-1">
                   <CaptionLarge color="#FF4500">{errors.verification}</CaptionLarge>
                 </div>
@@ -346,21 +465,17 @@ export default function SignupPage() {
 
         {step === "verification" && (
           <>
-            {canResendVerification ? (
-              <button
-                onClick={handleSendVerification}
-                className="w-full h-14 rounded-lg bg-[#F2F2F2] text-[#E67E22] font-bold text-lg shadow-[0px_5px_30px_0px_rgba(0,0,0,0.1)]"
-              >
-                인증번호 재전송
-              </button>
-            ) : (
-              <button
-                disabled
-                className="w-full h-14 rounded-lg bg-[#B0B0B0] text-white font-bold text-lg"
-              >
-                {formatTimer(verificationTimer)} 후 인증번호 재전송
-              </button>
-            )}
+            <button
+              onClick={handleSendVerification}
+              disabled={!canResendVerification}
+              className={`w-full h-14 rounded-lg font-bold text-lg border-2 ${
+                canResendVerification
+                  ? "border-[#E67E22] bg-white text-[#E67E22] shadow-[0px_5px_30px_0px_rgba(0,0,0,0.1)]"
+                  : "border-[#B0B0B0] bg-white text-[#B0B0B0]"
+              }`}
+            >
+              {canResendVerification ? "인증번호 재전송" : `${formatTimer(verificationTimer)} 후 인증번호 재전송`}
+            </button>
 
             <button
               onClick={handleStart}
@@ -443,7 +558,17 @@ export default function SignupPage() {
                   </button>
                   <BodySmall color="#333333">{term.text}</BodySmall>
                 </div>
-                <ChevronRightIcon size={24} className="text-[#767676]" />
+                <button
+                  onClick={() => {
+                    setShowTerms(false)
+                    setTimeout(() => {
+                      router.push(`/client/terms-detail?tab=${term.key}`)
+                    }, 100)
+                  }}
+                  className="flex items-center"
+                >
+                  <ChevronRightIcon size={24} className="text-[#767676]" />
+                </button>
               </div>
             ))}
           </div>

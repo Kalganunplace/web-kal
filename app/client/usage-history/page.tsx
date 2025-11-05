@@ -46,7 +46,7 @@ export default function UsageHistoryPage() {
   })
 
   // 모든 예약의 쿠폰 정보 가져오기
-  const { data: usedCoupons = new Map() } = useQuery({
+  const { data: usedCouponsMap = new Map() } = useQuery({
     queryKey: ['used-coupons', 'bookings', bookings.map(b => b.id)],
     queryFn: async () => {
       if (!user?.id || bookings.length === 0) return new Map()
@@ -60,14 +60,14 @@ export default function UsageHistoryPage() {
           .from('user_coupons')
           .select(`
             *,
-            coupon:coupons(*)
+            coupon_type:coupon_types(*)
           `)
           .eq('user_id', user.id)
           .eq('is_used', true)
           .in('booking_id', bookings.map(b => b.id))
 
         if (error) {
-          console.error('쿠폰 조회 오류 (무시됨):', error)
+          console.error('쿠폰 조회 오류:', error)
           return couponMap // 빈 Map 반환
         }
 
@@ -81,7 +81,7 @@ export default function UsageHistoryPage() {
 
         return couponMap
       } catch (error) {
-        console.error('쿠폰 로드 실패 (무시됨):', error)
+        console.error('쿠폰 로드 실패:', error)
         return new Map()
       }
     },

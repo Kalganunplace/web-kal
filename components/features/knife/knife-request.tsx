@@ -1,7 +1,6 @@
 "use client"
 
 import { DatePicker } from "@/components/common/date-picker"
-import BottomSheet from "@/components/ui/bottom-sheet"
 import { Button } from "@/components/ui/button"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium } from "@/components/ui/typography"
@@ -39,12 +38,74 @@ export default function KnifeRequest({
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<number>(13) // 기본값 13:00
   const [knifeTypes, setKnifeTypes] = useState<KnifeType[]>([])
   const [knifeSelections, setKnifeSelections] = useState<KnifeSelection[]>([])
-  const [tempKnifeSelections, setTempKnifeSelections] = useState<KnifeSelection[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [showKnifeBottomSheet, setShowKnifeBottomSheet] = useState(false)
+  const [showKnifeDropdown, setShowKnifeDropdown] = useState(false)
 
   // 시간대 옵션 (9시부터 18시까지)
   const timeSlotOptions = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+
+  // 초기 날짜 및 시간 설정 + localStorage에서 복원
+  useEffect(() => {
+    // localStorage에서 이전 상태 복원 시도
+    const savedState = localStorage.getItem('knife-request-temp-state')
+    if (savedState) {
+      try {
+        const { date, timeSlot, knives } = JSON.parse(savedState)
+        if (date) setSelectedDate(new Date(date))
+        if (timeSlot) setSelectedTimeSlot(timeSlot)
+        if (knives) setKnifeSelections(knives)
+        // 복원 후 localStorage 삭제
+        localStorage.removeItem('knife-request-temp-state')
+        return
+      } catch (e) {
+        console.error('Failed to restore state:', e)
+      }
+    }
+
+    // localStorage에 저장된 상태가 없으면 기본값 설정
+    const now = new Date()
+    const currentHour = now.getHours()
+
+    // 현재 날짜를 기본값으로 설정
+    setSelectedDate(now)
+
+    // 현재 시간에 따라 가장 가까운 이후 시간으로 설정
+    const nextAvailableHour = timeSlotOptions.find(hour => hour > currentHour)
+    if (nextAvailableHour) {
+      setSelectedTimeSlot(nextAvailableHour)
+    } else {
+      // 오늘 예약 가능한 시간이 없으면 다음 날 첫 시간으로 설정
+      const tomorrow = new Date(now)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      setSelectedDate(tomorrow)
+      setSelectedTimeSlot(timeSlotOptions[0]) // 9:00
+    }
+  }, [])
+
+  // 날짜 변경 시 시간 자동 조정
+  const handleDateChange = (date: Date | undefined) => {
+    if (!date) return
+
+    const now = new Date()
+    const isToday = date.toDateString() === now.toDateString()
+
+    setSelectedDate(date)
+
+    if (isToday) {
+      // 오늘 날짜 선택 시: 현재 시간 이후의 가장 가까운 시간으로 설정
+      const currentHour = now.getHours()
+      const nextAvailableHour = timeSlotOptions.find(hour => hour > currentHour)
+      if (nextAvailableHour) {
+        setSelectedTimeSlot(nextAvailableHour)
+      } else {
+        // 오늘 예약 가능한 시간이 없으면 첫 시간으로
+        setSelectedTimeSlot(timeSlotOptions[0])
+      }
+    } else {
+      // 오늘이 아닌 다른 날짜 선택 시: 정오 12:00으로 설정
+      setSelectedTimeSlot(12)
+    }
+  }
 
   // 데이터 로드
   useEffect(() => {
@@ -66,39 +127,27 @@ export default function KnifeRequest({
     loadData()
   }, [])
 
-  // 바텀시트 열기 (현재 선택을 임시 상태로 복사)
-  const handleOpenBottomSheet = () => {
-    setTempKnifeSelections([...knifeSelections])
-    setShowKnifeBottomSheet(true)
+  // 드롭다운 토글
+  const handleToggleDropdown = () => {
+    setShowKnifeDropdown(!showKnifeDropdown)
   }
 
-  // 바텀시트에서 임시 수량 업데이트
-  const updateTempKnifeQuantity = (knifeTypeId: string, quantity: number) => {
-    setTempKnifeSelections(prev => {
+  // 드롭다운에서 칼 선택 (수량 1로 추가하고 드롭다운 닫기)
+  const handleSelectKnife = (knifeTypeId: string) => {
+    setKnifeSelections(prev => {
       const existing = prev.find(item => item.knife_type_id === knifeTypeId)
       if (existing) {
-        if (quantity === 0) {
-          return prev.filter(item => item.knife_type_id !== knifeTypeId)
-        }
+        // 이미 선택된 칼이면 수량만 증가
         return prev.map(item =>
-          item.knife_type_id === knifeTypeId ? { ...item, quantity } : item
+          item.knife_type_id === knifeTypeId ? { ...item, quantity: item.quantity + 1 } : item
         )
-      } else if (quantity > 0) {
-        return [...prev, { knife_type_id: knifeTypeId, quantity }]
+      } else {
+        // 새로운 칼 추가
+        return [...prev, { knife_type_id: knifeTypeId, quantity: 1 }]
       }
-      return prev
     })
-  }
-
-  // 바텀시트 확인 버튼 (임시 선택을 실제로 반영)
-  const handleConfirmSelection = () => {
-    setKnifeSelections([...tempKnifeSelections])
-    setShowKnifeBottomSheet(false)
-  }
-
-  // 바텀시트 닫기 (임시 선택 취소)
-  const handleCloseBottomSheet = () => {
-    setShowKnifeBottomSheet(false)
+    // 드롭다운 닫기
+    setShowKnifeDropdown(false)
   }
 
   // 실제 선택에서 수량 업데이트 (선택된 칼 목록에서 직접 수정할 때)
@@ -129,6 +178,14 @@ export default function KnifeRequest({
   // 다음 단계로 이동
   const handleSubmit = () => {
     if (!isAuthenticated || !user?.id) {
+      // 로그인 페이지로 이동하기 전에 현재 상태를 localStorage에 저장
+      const tempState = {
+        date: selectedDate?.toISOString(),
+        timeSlot: selectedTimeSlot,
+        knives: knifeSelections
+      }
+      localStorage.setItem('knife-request-temp-state', JSON.stringify(tempState))
+
       toast.error('로그인이 필요한 서비스입니다.')
       router.push('/client/login')
       return
@@ -197,7 +254,7 @@ export default function KnifeRequest({
           {/* 날짜 선택 */}
           <DatePicker
             selectedDate={selectedDate}
-            onDateSelect={setSelectedDate}
+            onDateSelect={handleDateChange}
             placeholder="날짜를 선택해주세요"
           />
 
@@ -226,17 +283,37 @@ export default function KnifeRequest({
           <h3 className="text-base font-bold text-gray-800 mb-3">연마할 칼을 추가해 주세요!</h3>
 
           <button
-            onClick={handleOpenBottomSheet}
+            onClick={handleToggleDropdown}
             className="w-full flex items-center justify-between p-4 border-2 border-[#E67E22] rounded-lg bg-white"
           >
             <div className="flex items-center gap-2">
               <Knife className="w-5 h-5 text-[#E67E22]" />
               <span className="font-medium text-gray-800">칼 추가하기</span>
             </div>
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className={`w-5 h-5 text-gray-400 transition-transform ${showKnifeDropdown ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
+
+          {/* 드롭다운 칼 종류 목록 */}
+          {showKnifeDropdown && (
+            <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-white">
+              {knifeTypes.map((knifeType) => (
+                <button
+                  key={knifeType.id}
+                  onClick={() => handleSelectKnife(knifeType.id)}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                >
+                  <span className="text-gray-800">{knifeType.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* 선택된 칼 목록 */}
           {knifeSelections.length > 0 && (
@@ -298,7 +375,7 @@ export default function KnifeRequest({
             <span className="text-base font-bold text-gray-800">총 수량 {totalQuantity}개</span>
             <div className="text-right">
               <p className="text-lg font-bold text-gray-800">총 금액: {knifeService.formatPrice(totalAmount)}</p>
-              <p className="text-xs text-gray-500">쿠폰제 별도</p>
+              <p className="text-xs text-gray-500">부가세 별도</p>
             </div>
           </div>
         )}
@@ -310,88 +387,13 @@ export default function KnifeRequest({
             onClick={handleSubmit}
             disabled={!selectedDate || totalQuantity === 0}
           >
-            바로 신청하기
+            바로 신청
           </Button>
         )}
 
         {/* Spacer for bottom navigation */}
         <div className="h-20" />
       </div>
-
-      {/* 칼 선택 바텀시트 */}
-      <BottomSheet isOpen={showKnifeBottomSheet} onClose={handleCloseBottomSheet}>
-        <div className="flex flex-col h-full max-h-[80vh]">
-          {/* 헤더 */}
-          <div className="p-6 pb-4 border-b border-gray-200">
-            <h3 className="text-xl font-bold text-gray-800 text-center">칼 추가 옵션</h3>
-          </div>
-
-          {/* 칼 목록 */}
-          <div className="flex-1 overflow-y-auto p-6 pt-4">
-            <div className="space-y-3">
-              {knifeTypes.map((knifeType) => {
-                const currentQuantity = tempKnifeSelections.find(
-                  item => item.knife_type_id === knifeType.id
-                )?.quantity || 0
-
-                return (
-                  <div key={knifeType.id} className="bg-[#F8F8F8] rounded-2xl p-4 flex items-center gap-4">
-                    {/* 칼 이미지 */}
-                    <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
-                      {knifeType.image_url ? (
-                        <img src={knifeType.image_url} alt={knifeType.name} className="w-full h-full object-contain" />
-                      ) : (
-                        <div className="text-4xl">🔪</div>
-                      )}
-                    </div>
-
-                    {/* 칼 정보 */}
-                    <div className="flex-1">
-                      <h4 className="font-bold text-gray-800">{knifeType.name}</h4>
-                      <p className="text-sm text-gray-500">개당 {knifeService.formatPrice(knifeType.discount_price)}</p>
-                    </div>
-
-                    {/* 수량 조절 */}
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => updateTempKnifeQuantity(knifeType.id, Math.max(0, currentQuantity - 1))}
-                        className="w-8 h-8 rounded-full border-2 border-[#E67E22] flex items-center justify-center text-[#E67E22] disabled:border-gray-300 disabled:text-gray-300"
-                        disabled={currentQuantity === 0}
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="font-bold text-lg w-6 text-center">{currentQuantity}</span>
-                      <button
-                        onClick={() => updateTempKnifeQuantity(knifeType.id, currentQuantity + 1)}
-                        className="w-8 h-8 rounded-full border-2 border-[#E67E22] flex items-center justify-center text-[#E67E22]"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* 가격 */}
-                    <div className="text-right min-w-[60px]">
-                      <p className="font-bold text-gray-800">
-                        {currentQuantity > 0 ? knifeService.formatPrice(knifeType.discount_price * currentQuantity) : '0원'}
-                      </p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* 하단 고정 버튼 */}
-          <div className="p-6 pt-4 border-t border-gray-200 bg-white">
-            <Button
-              onClick={handleConfirmSelection}
-              className="w-full bg-[#E67E22] hover:bg-[#D35400] text-white rounded-xl py-4 font-bold text-lg"
-            >
-              추가하기
-            </Button>
-          </div>
-        </div>
-      </BottomSheet>
     </>
   )
 }
