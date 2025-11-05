@@ -24,7 +24,6 @@ export default function PaymentBottomSheet({
   isSubmitting = false
 }: PaymentBottomSheetProps) {
   const [depositorName, setDepositorName] = useState("")
-  const [agreeRefund, setAgreeRefund] = useState(false)
 
   const handleSubmit = async () => {
     if (!depositorName.trim()) {
@@ -38,7 +37,6 @@ export default function PaymentBottomSheet({
   const handleClose = () => {
     if (!isSubmitting) {
       setDepositorName("")
-      setAgreeRefund(false)
       onClose()
     }
   }
@@ -109,20 +107,10 @@ export default function PaymentBottomSheet({
           />
         </div>
 
-        {/* 환급계좌승인 신청 */}
-        <div className="flex items-start gap-2">
-          <input
-            type="checkbox"
-            id="agree-refund"
-            checked={agreeRefund}
-            onChange={(e) => setAgreeRefund(e.target.checked)}
-            disabled={isSubmitting}
-            className="mt-1 w-4 h-4 text-[#E67E22] border-gray-300 rounded focus:ring-[#E67E22] disabled:cursor-not-allowed"
-          />
-          <label htmlFor="agree-refund" className="text-xs text-gray-600 leading-relaxed">
-            주문 후 48시간 이내 입금을 완료해 주세요.<br />
-            입금이 확인되면 바로 예약 확정을 안내드립니다!
-          </label>
+        {/* 안내 문구 */}
+        <div className="text-xs text-gray-600 text-center leading-relaxed">
+          주문 후 48시간 이내 입금을 완료해 주세요.<br />
+          입금이 확인되면 바로 예약 확정을 안내드립니다!
         </div>
 
         {/* 버튼 */}
