@@ -497,15 +497,24 @@ export default function PaymentConfirmation() {
           </div>
 
           <div className="mt-4 space-y-2">
-            <button className="w-full flex items-center justify-between py-3 px-4 bg-white border border-gray-200 rounded-lg">
+            <button
+              onClick={() => router.push('/client/terms-detail?type=payment')}
+              className="w-full flex items-center justify-between py-3 px-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <span className="text-sm text-gray-700">결제 서비스 이용약관</span>
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </button>
-            <button className="w-full flex items-center justify-between py-3 px-4 bg-white border border-gray-200 rounded-lg">
+            <button
+              onClick={() => router.push('/client/terms-detail?type=privacy')}
+              className="w-full flex items-center justify-between py-3 px-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <span className="text-sm text-gray-700">개인정보 수집 및 이용 동의</span>
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </button>
-            <button className="w-full flex items-center justify-between py-3 px-4 bg-white border border-gray-200 rounded-lg">
+            <button
+              onClick={() => router.push('/client/terms-detail?type=provision')}
+              className="w-full flex items-center justify-between py-3 px-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <span className="text-sm text-gray-700">개인정보 제공 안내</span>
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </button>
