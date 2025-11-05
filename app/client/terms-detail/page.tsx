@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, BodySmall, Heading3 } from "@/components/ui/typography"
@@ -11,7 +11,7 @@ interface TermSection {
   content: string
 }
 
-export default function TermsDetailPage() {
+function TermsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<string>("service")
@@ -198,5 +198,13 @@ export default function TermsDetailPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function TermsDetailPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <TermsContent />
+    </Suspense>
   )
 }
