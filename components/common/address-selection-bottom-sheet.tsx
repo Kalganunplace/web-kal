@@ -31,7 +31,8 @@ export function AddressSelectionBottomSheet({
     }
   }
 
-  const getAddressIcon = (name: string) => {
+  const getAddressIcon = (name: string | null) => {
+    if (!name) return <MapPin className="w-5 h-5 text-orange-500" />
     const lowerName = name.toLowerCase()
     if (lowerName.includes('집') || lowerName.includes('home')) {
       return <Home className="w-5 h-5 text-orange-500" />
@@ -85,8 +86,8 @@ export function AddressSelectionBottomSheet({
                   {/* 주소 정보 */}
                   <div className="flex-1 text-left">
                     <div className="flex items-center gap-2 mb-1">
-                      {getAddressIcon(address.name || '')}
-                      <span className="font-medium text-gray-800">{address.name}</span>
+                      {getAddressIcon(address.address_name)}
+                      <span className="font-medium text-gray-800">{address.address_name || '주소'}</span>
                       {address.is_default && (
                         <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full">
                           기본

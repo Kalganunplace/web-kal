@@ -18,11 +18,12 @@ import { paymentSettingsService, type PaymentSettings } from "@/lib/payment-sett
 import { couponService, type UserCoupon } from "@/lib/coupon-service"
 import PaymentBottomSheet from "./payment-bottom-sheet"
 import AddressSelectionBottomSheet from "@/components/common/address-selection-bottom-sheet"
+import { DatePicker } from "@/components/common/date-picker"
 
 export default function PaymentConfirmation() {
   const router = useRouter()
   const { user, isAuthenticated } = useIsAuthenticated()
-  const { bookingData, clearBooking } = useBookingStore()
+  const { bookingData, clearBooking, setBookingData } = useBookingStore()
 
   const [knifeTypes, setKnifeTypes] = useState<KnifeType[]>([])
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null)
@@ -35,6 +36,9 @@ export default function PaymentConfirmation() {
   const [showPaymentBottomSheet, setShowPaymentBottomSheet] = useState(false)
   const [showAddressSelectionSheet, setShowAddressSelectionSheet] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<'simple' | 'deposit'>('deposit')
+  const [isEditingSchedule, setIsEditingSchedule] = useState(false)
+  const [tempDate, setTempDate] = useState<Date>()
+  const [tempTimeSlot, setTempTimeSlot] = useState<number>(13)
 
   // 데이터 검증 및 로드
   useEffect(() => {
@@ -117,11 +121,47 @@ export default function PaymentConfirmation() {
 
   const totalAmount = originalAmount - couponDiscount
 
+  // 시간대 옵션 (9시부터 18시까지)
+  const timeSlotOptions = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+
   // 예약 날짜 포맷
   const formattedDate = format(new Date(bookingData.booking_date), 'yyyy.MM.dd', { locale: ko })
   const formattedTime = bookingData.booking_time.substring(0, 5) // "13:00:00" -> "13:00"
   const timeOfDay = parseInt(formattedTime) >= 12 ? '오후' : '오전'
   const hour = parseInt(formattedTime) > 12 ? parseInt(formattedTime) - 12 : parseInt(formattedTime)
+
+  // 일정 변경 시작
+  const handleStartEditingSchedule = () => {
+    setTempDate(new Date(bookingData.booking_date))
+    const currentHour = parseInt(formattedTime)
+    setTempTimeSlot(currentHour)
+    setIsEditingSchedule(true)
+  }
+
+  // 일정 변경 확인
+  const handleConfirmScheduleChange = () => {
+    if (!tempDate) {
+      toast.error('날짜를 선택해주세요.')
+      return
+    }
+
+    const newBookingData = {
+      ...bookingData,
+      booking_date: format(tempDate, 'yyyy-MM-dd'),
+      booking_time: `${tempTimeSlot.toString().padStart(2, '0')}:00:00`
+    }
+
+    setBookingData(newBookingData)
+    setIsEditingSchedule(false)
+    toast.success('일정이 변경되었습니다.')
+  }
+
+  // 일정 변경 취소
+  const handleCancelScheduleChange = () => {
+    setIsEditingSchedule(false)
+    setTempDate(undefined)
+    setTempTimeSlot(13)
+  }
 
   // 결제하기 버튼 클릭 (바텀시트 오픈)
   const handlePayment = () => {
@@ -286,22 +326,80 @@ export default function PaymentConfirmation() {
         <section className="mb-6">
           <h3 className="text-base font-bold text-gray-800 mb-3">예약 일정</h3>
 
-          <div className="bg-[#FFF7ED] rounded-xl p-4">
-            <p className="text-lg font-bold text-[#E67E22]">
-              {formattedDate} {timeOfDay} {hour}시
-            </p>
-            <p className="text-xs text-gray-600 mt-1">
-              예약이 확정되면 바로 알림 드릴게요 :)<br />
-              집을 확인해 주세요!
-            </p>
-          </div>
+          {!isEditingSchedule ? (
+            <>
+              <div className="bg-[#FFF7ED] rounded-xl p-4">
+                <p className="text-lg font-bold text-[#E67E22]">
+                  {formattedDate} {timeOfDay} {hour}시
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  예약이 확정되면 바로 알림 드릴게요 :)<br />
+                  집을 확인해 주세요!
+                </p>
+              </div>
 
-          <button
-            onClick={() => router.back()}
-            className="w-full mt-3 py-3 bg-white border border-[#E67E22] text-[#E67E22] rounded-lg font-medium"
-          >
-            일정 변경하기
-          </button>
+              <button
+                onClick={handleStartEditingSchedule}
+                className="w-full mt-3 py-3 bg-white border border-[#E67E22] text-[#E67E22] rounded-lg font-medium"
+              >
+                일정 변경하기
+              </button>
+            </>
+          ) : (
+            <div className="space-y-4">
+              {/* 날짜 선택 */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">날짜 선택</label>
+                <DatePicker
+                  selectedDate={tempDate}
+                  onDateSelect={setTempDate}
+                  placeholder="날짜를 선택해주세요"
+                />
+              </div>
+
+              {/* 시간대 선택 */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">시간 선택</label>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {timeSlotOptions.map((hourOption) => (
+                    <button
+                      key={hourOption}
+                      onClick={() => setTempTimeSlot(hourOption)}
+                      className={`flex-shrink-0 px-6 py-3 rounded-lg font-medium transition-colors ${
+                        tempTimeSlot === hourOption
+                          ? 'bg-[#E67E22] text-white'
+                          : 'bg-[#F2F2F2] text-gray-600'
+                      }`}
+                    >
+                      {hourOption}:00
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleCancelScheduleChange}
+                  variant="outline"
+                  className="flex-1 h-12 rounded-lg text-sm font-medium"
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handleConfirmScheduleChange}
+                  disabled={!tempDate}
+                  className={`flex-1 h-12 rounded-lg text-sm font-bold transition-colors ${
+                    !tempDate
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-[#E67E22] hover:bg-[#D35400] text-white'
+                  }`}
+                >
+                  확인
+                </Button>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* 쿠폰 등록 */}
@@ -357,7 +455,7 @@ export default function PaymentConfirmation() {
                   <div className="w-3 h-3 rounded-full bg-[#E67E22]"></div>
                 )}
               </div>
-              <span className="text-sm text-gray-700">무통장입금</span>
+              <span className="text-sm text-gray-700">계좌이체</span>
             </button>
 
             <button
