@@ -20,7 +20,7 @@ const TopBanner: React.FC<TopBannerProps> = ({
   return (
     <div className={cn(
       "flex justify-between items-center gap-1",
-      "px-5 py-[8px]", // 60px top padding for status bar
+      "px-5 py-[20px]", // 60px top padding for status bar
       "w-full",
       className
     )}>

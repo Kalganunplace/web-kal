@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import { ChevronDown, ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
+import { ChevronDown, ChevronLeft } from "lucide-react"
+import Image from "next/image"
+import { useState } from "react"
 
 interface DatePickerProps {
   selectedDate?: Date
@@ -76,8 +77,13 @@ export function DatePicker({
         }`}
       >
         <div className="flex items-center gap-2">
-          <span>📅</span>
-          <span className="text-orange-600 font-medium">
+          <Image
+            src="/svg/Icon_calendar.svg"
+            alt="Calendar"
+            width={18}
+            height={18}
+          />
+          <span className="text-gray-800 font-medium">
             {selectedDate ? formatDate(selectedDate) : placeholder}
           </span>
         </div>

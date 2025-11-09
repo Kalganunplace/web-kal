@@ -1,24 +1,24 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import TopBanner from "@/components/ui/top-banner"
 import { Button } from "@/components/ui/button"
-import { Plus, Minus, ChevronRight } from "lucide-react"
-import { toast } from "sonner"
+import TopBanner from "@/components/ui/top-banner"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
+import { ChevronRight } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
-import { useBookingStore } from "@/stores/booking-store"
-import { useIsAuthenticated } from "@/stores/auth-store"
-import { knifeService, type KnifeType } from "@/lib/knife-service"
-import { bookingService } from "@/lib/booking-service"
-import { addressService, type Address } from "@/lib/address-service"
-import { paymentSettingsService, type PaymentSettings } from "@/lib/payment-settings-service"
-import { couponService, type UserCoupon } from "@/lib/coupon-service"
-import PaymentBottomSheet from "./payment-bottom-sheet"
 import AddressSelectionBottomSheet from "@/components/common/address-selection-bottom-sheet"
 import { DatePicker } from "@/components/common/date-picker"
+import { addressService, type Address } from "@/lib/address-service"
+import { bookingService } from "@/lib/booking-service"
+import { couponService, type UserCoupon } from "@/lib/coupon-service"
+import { knifeService, type KnifeType } from "@/lib/knife-service"
+import { paymentSettingsService, type PaymentSettings } from "@/lib/payment-settings-service"
+import { useIsAuthenticated } from "@/stores/auth-store"
+import { useBookingStore } from "@/stores/booking-store"
+import PaymentBottomSheet from "./payment-bottom-sheet"
 
 export default function PaymentConfirmation() {
   const router = useRouter()
@@ -235,10 +235,10 @@ export default function PaymentConfirmation() {
         onBackClick={() => router.back()}
       />
 
-      <div className="flex-1 px-5 py-6 bg-white overflow-y-auto">
+      <div className="flex-1 pb-6 bg-[#F5F5F5] overflow-y-auto">
         {/* 상품 정보 */}
-        <section className="mb-6">
-          <h3 className="text-base font-bold text-gray-800 mb-3">상품 정보</h3>
+        <section className="mb-4 bg-white p-5 shadow-sm">
+          <h3 className="text-base font-bold text-[#333333] mb-3">상품 정보</h3>
 
           <div className="space-y-3">
             {bookingData.items.map((item) => {
@@ -246,9 +246,9 @@ export default function PaymentConfirmation() {
               if (!knifeType) return null
 
               return (
-                <div key={item.knife_type_id} className="bg-[#F8F8F8] rounded-2xl p-4 flex items-center gap-4">
+                <div key={item.knife_type_id} className="bg-[#F2F2F2] rounded-3xl p-4 flex items-center gap-3">
                   {/* 칼 이미지 */}
-                  <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-[80px] h-[80px] bg-white rounded-2xl flex items-center justify-center flex-shrink-0 p-2">
                     {knifeType.image_url ? (
                       <img src={knifeType.image_url} alt={knifeType.name} className="w-full h-full object-contain" />
                     ) : (
@@ -256,18 +256,24 @@ export default function PaymentConfirmation() {
                     )}
                   </div>
 
-                  {/* 칼 정보 */}
-                  <div className="flex-1">
-                    <h4 className="font-bold text-gray-800">{knifeType.name}</h4>
-                    <p className="text-sm text-gray-500">개당 {knifeService.formatPrice(knifeType.discount_price)}</p>
+                  {/* 칼 정보와 수량 */}
+                  <div className="flex-1 flex flex-col gap-1">
+                    <h4 className="font-bold text-[#333333]">{knifeType.name}</h4>
+                    <p className="text-xs text-[#999999]">개당 {knifeService.formatPrice(knifeType.discount_price)}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-sm text-gray-600">수량: {item.quantity}개</span>
+                      <div className="w-6 h-6 rounded-full border-2 border-[#E67E22] flex items-center justify-center">
+                        <span className="text-xs text-[#E67E22]">-</span>
+                      </div>
+                      <span className="text-base font-bold text-[#333333] w-6 text-center">{item.quantity}</span>
+                      <div className="w-6 h-6 rounded-full border-2 border-[#E67E22] flex items-center justify-center">
+                        <span className="text-xs text-[#E67E22]">+</span>
+                      </div>
                     </div>
                   </div>
 
                   {/* 가격 */}
                   <div className="text-right">
-                    <p className="font-bold text-gray-800">
+                    <p className="text-lg font-bold text-[#333333]">
                       {knifeService.formatPrice(knifeType.discount_price * item.quantity)}
                     </p>
                   </div>
@@ -276,46 +282,51 @@ export default function PaymentConfirmation() {
             })}
           </div>
 
+          <div className="w-full border-t border-[#CCCCCC] my-4"></div>
+
           {/* 총 수량 및 금액 */}
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-base font-bold text-gray-800">총 수량 {totalQuantity}개</span>
+          <div className="flex items-center justify-between">
+            <span className="text-base font-bold text-[#333333]">총 수량 {totalQuantity}개</span>
             <div className="text-right">
               {couponDiscount > 0 ? (
                 <>
-                  <p className="text-sm text-gray-500 line-through">{knifeService.formatPrice(originalAmount)}</p>
-                  <p className="text-lg font-bold text-[#E67E22]">
+                  <p className="text-sm text-[#999999] line-through">{knifeService.formatPrice(originalAmount)}</p>
+                  <p className="text-xl font-bold text-[#E67E22]">
                     총 금액: {knifeService.formatPrice(totalAmount)}
                   </p>
-                  <p className="text-xs text-gray-500">{knifeService.formatPrice(couponDiscount)} 할인 적용</p>
                 </>
               ) : (
-                <>
-                  <p className="text-lg font-bold text-[#E67E22]">총 금액: {knifeService.formatPrice(totalAmount)}</p>
-                  <p className="text-xs text-gray-500">쿠폰제 별도</p>
-                </>
+                <p className="text-xl font-bold text-[#E67E22]">총 금액: {knifeService.formatPrice(totalAmount)}</p>
               )}
             </div>
+          </div>
+          <div className="text-right mt-1">
+            {couponDiscount > 0 ? (
+              <p className="text-xs text-[#999999]">{knifeService.formatPrice(couponDiscount)} 할인 적용</p>
+            ) : (
+              <p className="text-xs text-[#E67E22]">부가세 별도</p>
+            )}
           </div>
         </section>
 
         {/* 주소 상세 */}
-        <section className="mb-6">
-          <h3 className="text-base font-bold text-gray-800 mb-3">주소 상세</h3>
+        <section className="mb-4 bg-white p-5 shadow-sm">
+          <h3 className="text-base font-bold text-[#333333] mb-3">주소 상세</h3>
 
           {selectedAddress ? (
             <>
-              <div className="bg-[#F8F8F8] rounded-xl p-4">
-                <p className="text-gray-800 font-medium mb-1">
+              <div className="bg-white border border-[#E0E0E0] rounded-2xl p-4">
+                <p className="text-[#333333] font-medium mb-1">
                   {selectedAddress.address}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-[#999999]">
                   {selectedAddress.detail_address}
                 </p>
               </div>
 
               <button
                 onClick={() => setShowAddressSelectionSheet(true)}
-                className="w-full mt-3 py-3 bg-white border border-[#E67E22] text-[#E67E22] rounded-lg font-medium"
+                className="w-full mt-3 py-3 bg-[#F2F2F2] text-[#E67E22] rounded-2xl font-bold text-sm"
               >
                 주소 변경하기
               </button>
@@ -323,7 +334,7 @@ export default function PaymentConfirmation() {
           ) : (
             <button
               onClick={() => router.push('/client/address-settings')}
-              className="w-full py-4 bg-[#FFF7ED] border-2 border-[#E67E22] text-[#E67E22] rounded-lg font-medium"
+              className="w-full py-4 bg-[#FFF7ED] border-2 border-[#E67E22] text-[#E67E22] rounded-2xl font-bold text-sm"
             >
               주소를 등록해주세요
             </button>
@@ -331,16 +342,16 @@ export default function PaymentConfirmation() {
         </section>
 
         {/* 예약 일정 */}
-        <section className="mb-6">
-          <h3 className="text-base font-bold text-gray-800 mb-3">예약 일정</h3>
+        <section className="mb-4 bg-white p-5 shadow-sm">
+          <h3 className="text-base font-bold text-[#333333] mb-3">예약 일정</h3>
 
           {!isEditingSchedule ? (
             <>
-              <div className="bg-[#FFF7ED] rounded-xl p-4">
+              <div className="bg-white border border-[#E0E0E0] rounded-2xl p-4">
                 <p className="text-lg font-bold text-[#E67E22]">
                   {formattedDate} {timeOfDay} {hour}시
                 </p>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-xs text-[#999999] mt-1">
                   예약이 확정되면 바로 알림 드릴게요 :)<br />
                   집을 확인해 주세요!
                 </p>
@@ -348,7 +359,7 @@ export default function PaymentConfirmation() {
 
               <button
                 onClick={handleStartEditingSchedule}
-                className="w-full mt-3 py-3 bg-white border border-[#E67E22] text-[#E67E22] rounded-lg font-medium"
+                className="w-full mt-3 py-3 bg-[#F2F2F2] text-[#E67E22] rounded-2xl font-bold text-sm"
               >
                 일정 변경하기
               </button>
@@ -411,8 +422,8 @@ export default function PaymentConfirmation() {
         </section>
 
         {/* 쿠폰 등록 */}
-        <section className="mb-6">
-          <h3 className="text-base font-bold text-gray-800 mb-3">쿠폰 등록</h3>
+        <section className="mb-4 bg-white p-5 shadow-sm">
+          <h3 className="text-base font-bold text-[#333333] mb-3">쿠폰 등록</h3>
 
           <div className="relative">
             <select
@@ -422,7 +433,7 @@ export default function PaymentConfirmation() {
                 setSelectedCoupon(coupon || null)
               }}
               disabled={availableCoupons.length === 0}
-              className="w-full py-3 px-4 pr-10 border border-gray-300 rounded-lg focus:border-[#E67E22] focus:outline-none appearance-none bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 pr-10 border border-[#E0E0E0] rounded-2xl focus:border-[#E67E22] focus:outline-none appearance-none bg-white disabled:bg-gray-100 disabled:cursor-not-allowed text-[#333333]"
             >
               <option value="">
                 {availableCoupons.length === 0 ? '사용 가능한 쿠폰이 없습니다' : '쿠폰 선택하기'}
@@ -433,13 +444,13 @@ export default function PaymentConfirmation() {
                 </option>
               ))}
             </select>
-            <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none rotate-90" />
+            <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#999999] pointer-events-none rotate-90" />
           </div>
 
           {/* 선택된 쿠폰 할인 표시 */}
           {selectedCoupon && couponDiscount > 0 && (
-            <div className="mt-3 p-3 bg-[#FFF7ED] rounded-lg flex items-center justify-between">
-              <span className="text-sm text-gray-700">쿠폰 할인</span>
+            <div className="mt-3 p-3 bg-[#FFF7ED] rounded-2xl flex items-center justify-between">
+              <span className="text-sm text-[#333333]">쿠폰 할인</span>
               <span className="text-lg font-bold text-[#E67E22]">
                 - {knifeService.formatPrice(couponDiscount)}
               </span>
@@ -448,8 +459,8 @@ export default function PaymentConfirmation() {
         </section>
 
         {/* 결제 방법 */}
-        <section className="mb-6">
-          <h3 className="text-base font-bold text-gray-800 mb-3">결제 방법</h3>
+        <section className="mb-4 bg-white p-5 shadow-sm">
+          <h3 className="text-base font-bold text-[#333333] mb-3">결제 방법</h3>
 
           <div className="flex items-center gap-3">
             <button
@@ -457,13 +468,13 @@ export default function PaymentConfirmation() {
               className="flex items-center gap-2"
             >
               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                paymentMethod === 'deposit' ? 'border-[#E67E22]' : 'border-gray-300'
+                paymentMethod === 'deposit' ? 'border-[#E67E22]' : 'border-[#CCCCCC]'
               }`}>
                 {paymentMethod === 'deposit' && (
                   <div className="w-3 h-3 rounded-full bg-[#E67E22]"></div>
                 )}
               </div>
-              <span className="text-sm text-gray-700">계좌이체</span>
+              <span className="text-sm text-[#333333]">계좌이체</span>
             </button>
 
             <button
@@ -471,35 +482,35 @@ export default function PaymentConfirmation() {
               className="flex items-center gap-2"
             >
               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                paymentMethod === 'simple' ? 'border-[#E67E22]' : 'border-gray-300'
+                paymentMethod === 'simple' ? 'border-[#E67E22]' : 'border-[#CCCCCC]'
               }`}>
                 {paymentMethod === 'simple' && (
                   <div className="w-3 h-3 rounded-full bg-[#E67E22]"></div>
                 )}
               </div>
-              <span className="text-sm text-gray-700">간편결제</span>
+              <span className="text-sm text-[#333333]">간편결제</span>
             </button>
           </div>
         </section>
 
         {/* 환불 정책 */}
-        <section className="mb-6">
-          <h3 className="text-base font-bold text-gray-800 mb-3">환불 정책</h3>
+        <section className="mb-4 bg-white p-5 shadow-sm">
+          <h3 className="text-base font-bold text-[#333333] mb-3">환불 정책</h3>
 
-          <div className="bg-[#F8F8F8] rounded-xl p-4 space-y-2">
-            <p className="text-xs text-gray-600 leading-relaxed">
+          <div className="bg-[#F2F2F2] rounded-2xl p-4 space-y-2">
+            <p className="text-xs text-[#666666] leading-relaxed">
               • 예약일 서비스는 이용일 기준 24시간 전까지 최소 시 전액 환불됩니다.
             </p>
-            <p className="text-xs text-gray-600 leading-relaxed">
+            <p className="text-xs text-[#666666] leading-relaxed">
               • 이용일 당일 취소 또는 무단 취소 시 환불이 불가합니다.
             </p>
-            <p className="text-xs text-gray-600 leading-relaxed">
+            <p className="text-xs text-[#666666] leading-relaxed">
               • 연마 작업이 이미 진행된 경우, 서비스 특성상 환불이 어려워요.
             </p>
-            <p className="text-xs text-gray-600 leading-relaxed">
+            <p className="text-xs text-[#666666] leading-relaxed">
               • 칼의 구조 상태의 경우, 사용 내역을 기준으로 환불 금액이 산정되어요.
             </p>
-            <p className="text-xs text-gray-600 leading-relaxed">
+            <p className="text-xs text-[#666666] leading-relaxed">
               • 기타 환불 관련 문의는 고객센터를 통해 연락 주세요.
             </p>
           </div>
@@ -507,41 +518,42 @@ export default function PaymentConfirmation() {
           <div className="mt-4 space-y-2">
             <button
               onClick={() => router.push('/client/terms-detail?type=payment')}
-              className="w-full flex items-center justify-between py-3 px-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between py-3 px-4 bg-white border border-[#E0E0E0] rounded-2xl hover:bg-gray-50 transition-colors"
             >
-              <span className="text-sm text-gray-700">결제 서비스 이용약관</span>
-              <ChevronRight className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-[#333333]">결제 서비스 이용약관</span>
+              <ChevronRight className="w-4 h-4 text-[#999999]" />
             </button>
             <button
               onClick={() => router.push('/client/terms-detail?type=privacy')}
-              className="w-full flex items-center justify-between py-3 px-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between py-3 px-4 bg-white border border-[#E0E0E0] rounded-2xl hover:bg-gray-50 transition-colors"
             >
-              <span className="text-sm text-gray-700">개인정보 수집 및 이용 동의</span>
-              <ChevronRight className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-[#333333]">개인정보 수집 및 이용 동의</span>
+              <ChevronRight className="w-4 h-4 text-[#999999]" />
             </button>
             <button
               onClick={() => router.push('/client/terms-detail?type=provision')}
-              className="w-full flex items-center justify-between py-3 px-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between py-3 px-4 bg-white border border-[#E0E0E0] rounded-2xl hover:bg-gray-50 transition-colors"
             >
-              <span className="text-sm text-gray-700">개인정보 제공 안내</span>
-              <ChevronRight className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-[#333333]">개인정보 제공 안내</span>
+              <ChevronRight className="w-4 h-4 text-[#999999]" />
             </button>
           </div>
 
-          <p className="text-xs text-gray-500 mt-4 text-center">
+          <p className="text-xs text-[#999999] mt-4 text-center">
             구매 내용이 동의하시면 결제 버튼을 눌러주세요.
           </p>
         </section>
 
         {/* 결제하기 버튼 */}
-        <Button
-          className="w-full bg-[#E67E22] hover:bg-[#D35400] text-white rounded-xl py-4 font-bold text-lg disabled:bg-gray-300"
-          onClick={handlePayment}
-          disabled={!selectedAddress}
-        >
-          결제하기
-        </Button>
-
+        <div className="flex justify-center items-center px-5">
+          <Button
+            className="w-full bg-[#E67E22] hover:bg-[#D35400] text-white rounded-xl py-4 font-bold text-lg disabled:bg-gray-300"
+            onClick={handlePayment}
+            disabled={!selectedAddress}
+          >
+            결제하기
+          </Button>
+        </div>
         {/* Spacer for bottom navigation */}
         <div className="h-20" />
       </div>

@@ -78,51 +78,41 @@ export default function BottomNavigation({ hasNotification = false }: BottomNavi
                   {item.hasNotification && item.path === "/client/notifications" ? (
                     <NotificationBadgeIcon
                       size={24}
-                      color={isActive ? "#E67E22" : "#767676"}
+                      color={isActive ? "#F97316" : "#767676"}
                     />
                   ) : item.icon === "home" ? (
                     <HomeIcon
                       size={24}
-                      color={isActive ? "#E67E22" : "#767676"}
+                      color={isActive ? "#F97316" : "#767676"}
                     />
                   ) : item.icon === "notification" ? (
                     <NotificationIcon
                       size={24}
-                      color={isActive ? "#E67E22" : "#767676"}
+                      color={isActive ? "#F97316" : "#767676"}
                     />
                   ) : item.icon === "receipt" ? (
                     <ReceiptIcon
                       size={24}
-                      color={isActive ? "#E67E22" : "#767676"}
+                      color={isActive ? "#F97316" : "#767676"}
                     />
                   ) : item.icon === "profile" ? (
                     <ProfileIcon
                       size={24}
-                      color={isActive ? "#E67E22" : "#767676"}
+                      color={isActive ? "#F97316" : "#767676"}
                     />
                   ) : null}
                 </div>
                 <span
-                  className={`text-[12px] font-bold leading-[0.99] text-center mt-1 ${
-                    isActive ? "text-[#E67E22]" : "text-[#767676]"
+                  className={`text-[11px] font-normal leading-tight text-center mt-1.5 ${
+                    isActive ? "text-[#F97316]" : "text-[#767676]"
                   }`}
-                                    style={{
+                  style={{
                     fontFamily: "var(--font-nanum-gothic, NanumGothic)",
                     ...(item.label === "이용내역" ? { width: "48px" } : {})
                   }}
                 >
                   {item.label}
                 </span>
-                {isActive && (
-                  <div
-                    className="absolute bottom-0 bg-[#E67E22]"
-                    style={{
-                      width: "24px",
-                      height: "3px",
-                      borderRadius: "1.5px"
-                    }}
-                  />
-                )}
               </button>
             )
           })}

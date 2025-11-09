@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium } from "@/components/ui/typography"
 import { format } from "date-fns"
-import { PocketKnifeIcon as Knife, Minus, Plus } from "lucide-react"
+import { Minus, Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -287,7 +287,7 @@ export default function KnifeRequest({
             className="w-full flex items-center justify-between p-4 border-2 border-[#E67E22] rounded-lg bg-white"
           >
             <div className="flex items-center gap-2">
-              <Knife className="w-5 h-5 text-[#E67E22]" />
+              <img src="/svg/Icon_knife.svg" alt="Knife" width={20} height={20} />
               <span className="font-medium text-gray-800">칼 추가하기</span>
             </div>
             <svg
@@ -323,9 +323,9 @@ export default function KnifeRequest({
                 if (!knifeType) return null
 
                 return (
-                  <div key={selection.knife_type_id} className="bg-[#F8F8F8] rounded-2xl p-4 flex items-center gap-4">
+                  <div key={selection.knife_type_id} className="bg-[#F2F2F2] rounded-3xl p-4 flex items-center gap-3">
                     {/* 칼 이미지 */}
-                    <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div className="w-[100px] h-[100px] bg-white rounded-2xl flex items-center justify-center flex-shrink-0 p-2">
                       {knifeType.image_url ? (
                         <img src={knifeType.image_url} alt={knifeType.name} className="w-full h-full object-contain" />
                       ) : (
@@ -333,34 +333,40 @@ export default function KnifeRequest({
                       )}
                     </div>
 
-                    {/* 칼 정보 */}
-                    <div className="flex-1">
-                      <h4 className="font-bold text-gray-800">{knifeType.name}</h4>
-                      <p className="text-sm text-gray-500">개당 {knifeService.formatPrice(knifeType.discount_price)}</p>
-                    </div>
+                    {/* 칼 정보와 수량 조절 */}
+                    <div className="flex-1 flex flex-col gap-2">
+                      {/* 상단: 칼 이름과 가격 */}
+                      <div>
+                        <h4 className="text-lg font-bold text-[#333333] mb-0.5">{knifeType.name}</h4>
+                        <p className="text-sm text-[#999999]">개당 {knifeService.formatPrice(knifeType.discount_price)}</p>
+                      </div>
 
-                    {/* 수량 조절 */}
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => updateKnifeQuantity(knifeType.id, Math.max(0, selection.quantity - 1))}
-                        className="w-8 h-8 rounded-full border-2 border-[#E67E22] flex items-center justify-center text-[#E67E22]"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="font-bold text-lg w-6 text-center">{selection.quantity}</span>
-                      <button
-                        onClick={() => updateKnifeQuantity(knifeType.id, selection.quantity + 1)}
-                        className="w-8 h-8 rounded-full border-2 border-[#E67E22] flex items-center justify-center text-[#E67E22]"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
+                      {/* 하단: 수량 조절과 소계 */}
+                      <div className="flex items-center justify-between">
+                        {/* 수량 조절 */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => updateKnifeQuantity(knifeType.id, Math.max(0, selection.quantity - 1))}
+                            className="w-5 h-5 rounded-full border-2 border-[#E67E22] flex items-center justify-center text-[#E67E22] hover:bg-[#E67E22] hover:text-white transition-colors"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="font-bold text-base w-8 text-center">{selection.quantity}</span>
+                          <button
+                            onClick={() => updateKnifeQuantity(knifeType.id, selection.quantity + 1)}
+                            className="w-5 h-5 rounded-full border-2 border-[#E67E22] flex items-center justify-center text-[#E67E22] hover:bg-[#E67E22] hover:text-white transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
 
-                    {/* 소계 */}
-                    <div className="text-right min-w-[80px]">
-                      <p className="font-bold text-gray-800">
-                        {knifeService.formatPrice(knifeType.discount_price * selection.quantity)}
-                      </p>
+                        {/* 소계 */}
+                        <div className="text-right">
+                          <p className="text-base font-bold text-[#333333]">
+                            {knifeService.formatPrice(knifeType.discount_price * selection.quantity)}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )
@@ -371,13 +377,15 @@ export default function KnifeRequest({
 
         {/* 총 수량 및 금액 */}
         {totalQuantity > 0 && (
-          <div className="mb-5 flex items-center justify-between">
-            <span className="text-base font-bold text-gray-800">총 수량 {totalQuantity}개</span>
-            <div className="text-right">
-              <p className="text-lg font-bold text-gray-800">총 금액: {knifeService.formatPrice(totalAmount)}</p>
-              <p className="text-xs text-gray-500">부가세 별도</p>
+          <>
+            <div className="flex items-center justify-between">
+              <span className="text-base font-bold text-gray-800">총 수량 {totalQuantity}개</span>
+              <div className="text-right">
+                <p className="text-lg font-bold text-gray-800">총 금액: {knifeService.formatPrice(totalAmount)}</p>
+              </div>
             </div>
-          </div>
+            <div className=" mb-5 flex items-center justify-end text-xs text-gray-500">부가세 별도</div>
+          </>
         )}
 
         {/* 바로 신청 버튼 */}
