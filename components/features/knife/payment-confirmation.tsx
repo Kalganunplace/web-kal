@@ -246,7 +246,7 @@ export default function PaymentConfirmation() {
               if (!knifeType) return null
 
               return (
-                <div key={item.knife_type_id} className="bg-[#F2F2F2] rounded-3xl p-4 flex items-center gap-3">
+                <div key={item.knife_type_id} className="bg-[#F2F2F2] rounded-xl p-4 flex items-center gap-3">
                   {/* 칼 이미지 */}
                   <div className="w-[80px] h-[80px] bg-white rounded-2xl flex items-center justify-center flex-shrink-0 p-2">
                     {knifeType.image_url ? (
@@ -422,7 +422,7 @@ export default function PaymentConfirmation() {
         </section>
 
         {/* 쿠폰 등록 */}
-        <section className="mb-4 bg-white p-5 shadow-sm">
+        <section className="mb-4 bg-white  p-5 shadow-sm">
           <h3 className="text-base font-bold text-[#333333] mb-3">쿠폰 등록</h3>
 
           <div className="relative">
@@ -494,7 +494,7 @@ export default function PaymentConfirmation() {
         </section>
 
         {/* 환불 정책 */}
-        <section className="mb-4 bg-white p-5 shadow-sm">
+        <section className="mb-4 bg-white  p-5 shadow-sm">
           <h3 className="text-base font-bold text-[#333333] mb-3">환불 정책</h3>
 
           <div className="bg-[#F2F2F2] rounded-2xl p-4 space-y-2">
