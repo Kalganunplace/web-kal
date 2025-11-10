@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// 쿠키에서 사용자 세션을 가져와서 Supabase 클라이언트 생성
+async function getSupabaseClient() {
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get('auth-token');
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: authToken ? {
+        Authorization: `Bearer ${authToken.value}`
+      } : {}
+    }
+  });
+
+  return supabase;
+}
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await getSupabaseClient();
     const { searchParams } = new URL(request.url);
     const isActive = searchParams.get('isActive');
 
@@ -41,6 +57,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: productsData });
   } catch (error: any) {
+    console.error('GET /api/admin/products error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -50,11 +67,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await getSupabaseClient();
     const body = await request.json();
+    const { category, ...insertData } = body;
 
+    // category 필드는 knife_types 테이블에 없으므로 제외
     const { data, error } = await supabase
       .from('knife_types')
-      .insert([body])
+      .insert([insertData])
       .select()
       .single();
 
@@ -62,6 +82,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
+    console.error('POST /api/admin/products error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -71,8 +92,9 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const supabase = await getSupabaseClient();
     const body = await request.json();
-    const { id, ...updateData } = body;
+    const { id, category, ...updateData } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -81,6 +103,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // category 필드는 knife_types 테이블에 없으므로 제외
     const { data, error } = await supabase
       .from('knife_types')
       .update(updateData)
@@ -92,6 +115,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
+    console.error('PUT /api/admin/products error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -101,6 +125,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const supabase = await getSupabaseClient();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -111,15 +136,20 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { error } = await supabase
+    // 소프트 삭제: is_active를 false로 설정
+    // 실제로 삭제하지 않고 비활성화하여 외래 키 제약 조건 문제를 방지
+    const { data, error } = await supabase
       .from('knife_types')
-      .delete()
-      .eq('id', id);
+      .update({ is_active: false })
+      .eq('id', id)
+      .select()
+      .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, data });
   } catch (error: any) {
+    console.error('DELETE /api/admin/products error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

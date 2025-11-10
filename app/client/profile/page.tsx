@@ -1,16 +1,17 @@
 "use client"
 
-import BottomNavigation from "@/components/common/bottom-navigation"
+import { AccountSwitchModal } from "@/components/auth/account-switch-modal"
 import { LoginBottomSheet } from "@/components/auth/login-prompt"
+import BottomNavigation from "@/components/common/bottom-navigation"
 import { ChevronRightIcon } from "@/components/ui/icon"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, Typography } from "@/components/ui/typography"
 import { useAuthHydration } from "@/hooks/use-auth-hydration"
-import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
 import { UserProfile } from "@/lib/auth/supabase"
+import { bannerService, type Banner } from "@/lib/banner-service"
 import { useAuth } from "@/stores/auth-store"
-import { AccountSwitchModal } from "@/components/auth/account-switch-modal"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -20,6 +21,7 @@ export default function ProfilePage() {
   const [showSwitchModal, setShowSwitchModal] = useState(false)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [profileLoading, setProfileLoading] = useState(false)
+  const [subscriptionBanner, setSubscriptionBanner] = useState<Banner | null>(null)
 
   // 관리자가 클라이언트 페이지 접근 시 모달 표시
   useEffect(() => {
@@ -53,6 +55,20 @@ export default function ProfilePage() {
         })
     }
   }, [user, loading])
+
+  // 구독 배너 로드
+  useEffect(() => {
+    const loadBanner = async () => {
+      try {
+        const banner = await bannerService.getProfileSubscriptionBanner()
+        setSubscriptionBanner(banner)
+      } catch (error) {
+        console.error('배너 로드 실패:', error)
+      }
+    }
+
+    loadBanner()
+  }, [])
 
   // 계정 전환 확인
   const handleSwitchAccount = async () => {
@@ -155,12 +171,12 @@ export default function ProfilePage() {
           </Typography>
           {userProfile && (
             <div className="flex items-center justify-center gap-4 text-sm text-[#666666]">
-              <div className="flex items-center gap-1">
+              {/* <div className="flex items-center gap-1">
                 <span>등급</span>
                 <span className="font-bold text-[#E67E22] capitalize">
                   {userProfile.memberGrade}
                 </span>
-              </div>
+              </div> */}
               <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
               <div className="flex items-center gap-1">
                 <span>서비스</span>
@@ -172,11 +188,11 @@ export default function ProfilePage() {
               <div className="flex items-center gap-1">
                 <span>가입</span>
                 <span className="font-bold">
-                  {userProfile.created_at ? 
+                  {userProfile.created_at ?
                     new Date(userProfile.created_at).toLocaleDateString('ko-KR', {
                       year: '2-digit',
                       month: '2-digit'
-                    }) : 
+                    }) :
                     '24.01'
                   }
                 </span>
@@ -185,57 +201,105 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* 구독 배너 */}
-        <div className="relative bg-[#FAF3E0] rounded-[30px] p-6 shadow-sm">
-          {/* 구독 상태 배지 */}
-          {userProfile?.subscriptionStatus === 'active' && (
-            <div className="absolute top-4 left-4 z-20">
-              <div className="bg-[#E67E22] text-white text-xs font-bold px-2 py-1 rounded-full">
-                구독중
+        {/* 구독 배너 - 관리자 설정 배너 또는 기본 배너 */}
+        {subscriptionBanner ? (
+          <div
+            className="relative rounded-[30px] p-6 shadow-sm cursor-pointer"
+            style={{
+              backgroundColor: subscriptionBanner.background_color || '#FAF3E0'
+            }}
+            onClick={() => {
+              if (subscriptionBanner.link_url) {
+                router.push(subscriptionBanner.link_url)
+              }
+            }}
+          >
+            {/* 구독 상태 배지 */}
+            {userProfile?.subscriptionStatus === 'active' && (
+              <div className="absolute top-4 left-4 z-20">
+                <div className="bg-[#E67E22] text-white text-xs font-bold px-2 py-1 rounded-full">
+                  구독중
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* 배경 이미지들 */}
-          <div className="absolute top-0 right-0 w-full h-full overflow-hidden rounded-[30px]">
-            <div className="absolute top-4 right-4 w-[59px] h-[59px] bg-cover bg-center opacity-20"></div>
-            <div className="absolute top-6 right-0 w-[59px] h-[59px] bg-cover bg-center opacity-20"></div>
-            <div className="absolute bottom-2 right-4 w-[35px] h-[35px] bg-cover bg-center opacity-20"></div>
-          </div>
+            {/* 배경 이미지 */}
+            {subscriptionBanner.image_url && (
+              <div className="absolute top-0 right-0 w-full h-full overflow-hidden rounded-[30px]">
+                <img
+                  src={subscriptionBanner.image_url}
+                  alt={subscriptionBanner.title}
+                  className="absolute right-0 top-0 h-full w-auto object-contain opacity-40"
+                />
+              </div>
+            )}
 
-          {/* 메인 콘텐츠 */}
-          <div className="relative z-10">
-            <div className="text-center mb-4">
-              <div className="text-2xl font-normal text-[#333333] leading-tight drop-shadow-sm">
-                {userProfile?.subscriptionStatus === 'active' ? (
-                  '구독 서비스 이용중!'
-                ) : (
-                  <>
-                    이제 칼갈이도<br />
-                    구독으로!
-                  </>
+            {/* 메인 콘텐츠 */}
+            <div className="relative z-10">
+              <div className="text-center mb-4">
+                <div
+                  className="text-2xl font-normal leading-tight drop-shadow-sm whitespace-pre-line"
+                  style={{
+                    color: subscriptionBanner.text_color || '#333333'
+                  }}
+                >
+                  {subscriptionBanner.title}
+                </div>
+                {subscriptionBanner.subtitle && (
+                  <div
+                    className="text-sm mt-2"
+                    style={{
+                      color: subscriptionBanner.text_color || '#666666',
+                      opacity: 0.8
+                    }}
+                  >
+                    {subscriptionBanner.subtitle}
+                  </div>
                 )}
               </div>
-              {userProfile?.subscriptionStatus === 'active' && (
-                <div className="text-sm text-[#666666] mt-2">
-                  매월 무제한 칼갈이 서비스
+
+              {subscriptionBanner.button_text && (
+                <div className="text-center">
+                  <button className="bg-[#E67E22] text-white px-6 py-2 rounded-lg font-medium">
+                    {subscriptionBanner.button_text}
+                  </button>
                 </div>
               )}
             </div>
+          </div>
+        ) : (
+          <div className="relative bg-[#FAF3E0] rounded-[30px] p-6 shadow-sm">
+            {/* 구독 상태 배지 */}
+            {userProfile?.subscriptionStatus === 'active' && (
+              <div className="absolute top-4 left-4 z-20">
+                <div className="bg-[#E67E22] text-white text-xs font-bold px-2 py-1 rounded-full">
+                  구독중
+                </div>
+              </div>
+            )}
 
-            {/* 하단 인디케이터 */}
-            <div className="flex justify-center space-x-1">
-              {[0, 1, 2].map((index) => (
-                <div 
-                  key={index}
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    index === 1 ? 'bg-gray-600' : 'bg-gray-400'
-                  }`}
-                ></div>
-              ))}
+            {/* 메인 콘텐츠 */}
+            <div className="relative z-10">
+              <div className="text-center mb-4">
+                <div className="text-2xl font-normal text-[#333333] leading-tight drop-shadow-sm">
+                  {userProfile?.subscriptionStatus === 'active' ? (
+                    '구독 서비스 이용중!'
+                  ) : (
+                    <>
+                      이제 칼갈이도<br />
+                      구독으로!
+                    </>
+                  )}
+                </div>
+                {userProfile?.subscriptionStatus === 'active' && (
+                  <div className="text-sm text-[#666666] mt-2">
+                    매월 무제한 칼갈이 서비스
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* 내 보유 쿠폰 버튼 */}
         <button
