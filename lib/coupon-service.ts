@@ -239,26 +239,60 @@ export class CouponService {
     const userCoupons = await this.getUserCoupons(userId, false)
     const now = new Date()
 
-    return userCoupons.filter(userCoupon => {
+    console.log('[getAvailableUserCoupons] Input:', { userId, orderAmount, knifeTypes, userCouponsCount: userCoupons.length })
+
+    const filtered = userCoupons.filter(userCoupon => {
       const coupon = userCoupon.coupon
-      if (!coupon) return false
+      if (!coupon) {
+        console.log('[getAvailableUserCoupons] Filtered: no coupon data', userCoupon.id)
+        return false
+      }
 
       // 유효기간 확인
       const validFrom = new Date(coupon.valid_from)
       const validUntil = new Date(coupon.valid_until)
-      if (now < validFrom || now > validUntil) return false
+      if (now < validFrom || now > validUntil) {
+        console.log('[getAvailableUserCoupons] Filtered: date invalid', {
+          couponId: coupon.id,
+          name: coupon.name,
+          now: now.toISOString(),
+          validFrom: validFrom.toISOString(),
+          validUntil: validUntil.toISOString()
+        })
+        return false
+      }
 
       // 최소 주문 금액 확인
-      if (orderAmount && coupon.min_order_amount && orderAmount < coupon.min_order_amount) return false
+      if (orderAmount && coupon.min_order_amount && orderAmount < coupon.min_order_amount) {
+        console.log('[getAvailableUserCoupons] Filtered: min order amount', {
+          couponId: coupon.id,
+          name: coupon.name,
+          orderAmount,
+          minOrderAmount: coupon.min_order_amount
+        })
+        return false
+      }
 
       // 특정 칼 종류 제한 확인
       if (coupon.target_knife_types && coupon.target_knife_types.length > 0 && knifeTypes) {
         const hasTargetKnife = knifeTypes.some(type => coupon.target_knife_types!.includes(type))
-        if (!hasTargetKnife) return false
+        if (!hasTargetKnife) {
+          console.log('[getAvailableUserCoupons] Filtered: knife types mismatch', {
+            couponId: coupon.id,
+            name: coupon.name,
+            targetKnifeTypes: coupon.target_knife_types,
+            knifeTypes
+          })
+          return false
+        }
       }
 
+      console.log('[getAvailableUserCoupons] Passed:', coupon.name)
       return true
     })
+
+    console.log('[getAvailableUserCoupons] Result:', { filteredCount: filtered.length })
+    return filtered
   }
 
   async issueCouponToUser(userId: string, couponId: string): Promise<UserCoupon> {

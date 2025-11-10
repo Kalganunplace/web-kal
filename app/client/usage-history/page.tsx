@@ -21,6 +21,10 @@ export default function UsageHistoryPage() {
 
   const [selectedItem, setSelectedItem] = useState<Booking | null>(null)
   const [showLoginSheet, setShowLoginSheet] = useState(false)
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [showYearDropdown, setShowYearDropdown] = useState(false)
+  const [selectedPeriod, setSelectedPeriod] = useState<'1month' | '3months' | '6months' | 'all'>('all')
+  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false)
 
   // React Query 훅 사용
   const { data: bookings = [], isLoading } = useUserBookings()
@@ -100,15 +104,58 @@ export default function UsageHistoryPage() {
   )
   const hasHistory = completedBookings.length > 0
 
-  // 연간 통계 계산
-  const currentYear = new Date().getFullYear()
+  // 사용 가능한 년도 목록 (예약이 있는 년도만)
+  const availableYears = Array.from(
+    new Set(bookings.map(b => new Date(b.booking_date).getFullYear()))
+  ).sort((a, b) => b - a) // 최신 년도부터
+
+  // 연간 통계 계산 (선택된 년도 기준)
   const yearlyBookings = bookings.filter(b =>
-    new Date(b.booking_date).getFullYear() === currentYear
+    new Date(b.booking_date).getFullYear() === selectedYear
   )
   const yearlyStats = {
-    year: currentYear,
+    year: selectedYear,
     sharpening_count: yearlyBookings.length,
     total_amount: yearlyBookings.reduce((sum, b) => sum + b.total_amount, 0).toLocaleString() + '원'
+  }
+
+  // 기간 필터링 함수
+  const getFilteredBookingsByPeriod = () => {
+    const now = new Date()
+    let startDate: Date
+
+    switch (selectedPeriod) {
+      case '1month':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+        break
+      case '3months':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
+        break
+      case '6months':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate())
+        break
+      case 'all':
+      default:
+        return bookings
+    }
+
+    return bookings.filter(b => {
+      const bookingDate = new Date(b.booking_date)
+      return bookingDate >= startDate && bookingDate <= now
+    })
+  }
+
+  // 선택된 년도 및 기간의 예약만 필터링
+  const filteredBookings = getFilteredBookingsByPeriod().filter(b =>
+    new Date(b.booking_date).getFullYear() === selectedYear
+  )
+
+  // 기간 레이블
+  const periodLabels = {
+    '1month': '최근 1개월',
+    '3months': '최근 3개월',
+    '6months': '최근 6개월',
+    'all': '전체'
   }
 
   // 로그인 상태
@@ -206,7 +253,7 @@ export default function UsageHistoryPage() {
   // 영수증 상세 뷰
   if (selectedItem) {
     const payment = payments.get(selectedItem.id)
-    const usedCoupon = usedCoupons.get(selectedItem.id)
+    const usedCoupon = usedCouponsMap.get(selectedItem.id)
 
     // 할인 및 세금 계산
     const discountAmount = usedCoupon?.discount_amount || 0
@@ -480,11 +527,11 @@ export default function UsageHistoryPage() {
       <div className="flex flex-col items-center gap-5 px-0">
         {/* Current Service Section */}
         {hasCurrentService && currentService && (
-          <div className="w-full px-5">
+          <div className="w-full ">
             <div className="flex justify-between items-center gap-5 mb-5">
               <BodyMedium color="#333333">현재 진행 중인 서비스</BodyMedium>
             </div>
-            <div className="bg-white rounded-[30px] shadow-[0px_6px_12px_-6px_rgba(24,39,75,0.12),_0px_8px_24px_-4px_rgba(24,39,75,0.08)] p-6 flex flex-col items-center gap-3">
+            <div className="bg-white  shadow-[0px_6px_12px_-6px_rgba(24,39,75,0.12),_0px_8px_24px_-4px_rgba(24,39,75,0.08)] p-6 flex flex-col items-center gap-3">
               <div className="text-5xl">{getStatusDisplay(currentService.status).icon}</div>
               <div className="text-center">
                 <BodyMedium color="#333333" className="font-bold whitespace-pre-line">
@@ -521,12 +568,89 @@ export default function UsageHistoryPage() {
 
         {/* Year Selection & Stats */}
         <div className="w-full  px-5 space-y-5">
-          {/* Year Selector */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
+          {/* Year & Period Selectors */}
+          <div className="relative flex justify-between items-center">
+            {/* Year Selector */}
+            <button
+              onClick={() => {
+                setShowYearDropdown(!showYearDropdown)
+                setShowPeriodDropdown(false)
+              }}
+              className="flex items-center gap-2 cursor-pointer"
+            >
               <BodyMedium color="#333333">{yearlyStats.year}</BodyMedium>
-              <ChevronDownIcon size={20} className="text-[#767676]" />
-            </div>
+              <ChevronDownIcon
+                size={20 as any}
+                className={`text-[#767676] transition-transform ${showYearDropdown ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {/* Period Selector */}
+            <button
+              onClick={() => {
+                setShowPeriodDropdown(!showPeriodDropdown)
+                setShowYearDropdown(false)
+              }}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <BodyMedium color="#333333">{periodLabels[selectedPeriod]}</BodyMedium>
+              <ChevronDownIcon
+                size={20 as any}
+                className={`text-[#767676] transition-transform ${showPeriodDropdown ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {/* Year Dropdown */}
+            {showYearDropdown && availableYears.length > 0 && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowYearDropdown(false)}
+                />
+                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[120px]">
+                  {availableYears.map((year) => (
+                    <button
+                      key={year}
+                      onClick={() => {
+                        setSelectedYear(year)
+                        setShowYearDropdown(false)
+                      }}
+                      className={`w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors ${
+                        year === selectedYear ? 'bg-orange-50 text-orange-600 font-medium' : 'text-gray-700'
+                      } first:rounded-t-lg last:rounded-b-lg`}
+                    >
+                      {year}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Period Dropdown */}
+            {showPeriodDropdown && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowPeriodDropdown(false)}
+                />
+                <div className="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[140px]">
+                  {(Object.keys(periodLabels) as Array<keyof typeof periodLabels>).map((period) => (
+                    <button
+                      key={period}
+                      onClick={() => {
+                        setSelectedPeriod(period)
+                        setShowPeriodDropdown(false)
+                      }}
+                      className={`w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors ${
+                        period === selectedPeriod ? 'bg-orange-50 text-orange-600 font-medium' : 'text-gray-700'
+                      } first:rounded-t-lg last:rounded-b-lg`}
+                    >
+                      {periodLabels[period]}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Stats */}
@@ -543,9 +667,9 @@ export default function UsageHistoryPage() {
         </div>
 
         {/* History Items or Empty State */}
-        {bookings.length > 0 ? (
+        {filteredBookings.length > 0 ? (
           <div className="w-full  px-5 space-y-5">
-            {bookings.map((booking, index) => (
+            {filteredBookings.map((booking, index) => (
               <div key={booking.id} className="space-y-3">
                 {/* Date Header */}
                 <div className="flex items-center">
