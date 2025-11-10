@@ -1,7 +1,7 @@
 "use client"
 
-import { HomeIcon, NotificationBadgeIcon, NotificationIcon, ProfileIcon, ReceiptIcon } from '@/components/ui/icon'
 import { LoginBottomSheet } from '@/components/auth/login-prompt'
+import { HomeIcon, NotificationBadgeIcon, NotificationIcon, ProfileIcon, ReceiptIcon } from '@/components/ui/icon'
 import { useAuthHydration } from '@/hooks/use-auth-hydration'
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
@@ -30,13 +30,13 @@ export default function BottomNavigation({ hasNotification = false }: BottomNavi
   const handleNavClick = (item: typeof navItems[0]) => {
     // 로그인이 필요한 탭들 체크
     const authRequiredPaths = ["/client/profile", "/client/notifications", "/client/usage-history"]
-    
+
     if (authRequiredPaths.includes(item.path)) {
       if (!loading && !user) {
         // 각 탭별로 다른 메시지 설정
         let title = "로그인이 필요해요"
         let message = "이 기능을 사용하려면 로그인이 필요합니다."
-        
+
         switch (item.path) {
           case "/client/profile":
             title = "내정보 확인하기"
@@ -51,7 +51,7 @@ export default function BottomNavigation({ hasNotification = false }: BottomNavi
             message = "주문 내역을 보려면 로그인이 필요합니다."
             break
         }
-        
+
         setLoginSheetConfig({ title, message })
         setShowLoginSheet(true)
         return
@@ -78,33 +78,33 @@ export default function BottomNavigation({ hasNotification = false }: BottomNavi
                   {item.hasNotification && item.path === "/client/notifications" ? (
                     <NotificationBadgeIcon
                       size={24}
-                      color={isActive ? "#F97316" : "#767676"}
+                      color={isActive ? "#E67E22" : "#767676"}
                     />
                   ) : item.icon === "home" ? (
                     <HomeIcon
                       size={24}
-                      color={isActive ? "#F97316" : "#767676"}
+                      color={isActive ? "#E67E22" : "#767676"}
                     />
                   ) : item.icon === "notification" ? (
                     <NotificationIcon
                       size={24}
-                      color={isActive ? "#F97316" : "#767676"}
+                      color={isActive ? "#E67E22" : "#767676"}
                     />
                   ) : item.icon === "receipt" ? (
                     <ReceiptIcon
                       size={24}
-                      color={isActive ? "#F97316" : "#767676"}
+                      color={isActive ? "#E67E22" : "#767676"}
                     />
                   ) : item.icon === "profile" ? (
                     <ProfileIcon
                       size={24}
-                      color={isActive ? "#F97316" : "#767676"}
+                      color={isActive ? "#E67E22" : "#767676"}
                     />
                   ) : null}
                 </div>
                 <span
                   className={`text-[11px] font-normal leading-tight text-center mt-1.5 ${
-                    isActive ? "text-[#F97316]" : "text-[#767676]"
+                    isActive ? "text-[#E67E22]" : "text-[#767676]"
                   }`}
                   style={{
                     fontFamily: "var(--font-nanum-gothic, NanumGothic)",

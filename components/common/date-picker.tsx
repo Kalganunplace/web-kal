@@ -33,15 +33,15 @@ export function DatePicker({
   }
 
   const handlePrevMonth = () => {
-    const currentDate = selectedDate || new Date()
+    const currentDate = tempSelectedDate || selectedDate || new Date()
     const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-    onDateSelect(prevMonth)
+    setTempSelectedDate(prevMonth)
   }
 
   const handleNextMonth = () => {
-    const currentDate = selectedDate || new Date()
+    const currentDate = tempSelectedDate || selectedDate || new Date()
     const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
-    onDateSelect(nextMonth)
+    setTempSelectedDate(nextMonth)
   }
 
   // 임시 날짜 선택 (드롭다운은 닫지 않음)
