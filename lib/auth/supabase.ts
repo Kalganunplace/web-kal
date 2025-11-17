@@ -309,6 +309,17 @@ class SupabaseAuthClient {
         return { success: false, error: '프로필 조회 중 오류가 발생했습니다.' }
       }
 
+      // 실제 쿠폰 수 조회 (user_coupons 테이블에서 직접 카운트)
+      const { count: couponCount, error: couponError } = await client
+        .from('user_coupons')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_used', false)
+
+      if (couponError) {
+        console.error('쿠폰 카운트 조회 오류:', couponError)
+      }
+
       // 프로필이 없으면 기본값으로 생성
       if (!profileData) {
         const { data: newProfile, error: createError } = await client
@@ -336,7 +347,7 @@ class SupabaseAuthClient {
             phone: userData.phone,
             name: userData.name,
             created_at: userData.created_at,
-            couponCount: newProfile?.coupon_count || 0,
+            couponCount: couponCount || 0,
             subscriptionStatus: newProfile?.subscription_status || 'none',
             notificationEnabled: newProfile?.notification_enabled || true,
             totalServices: newProfile?.total_services || 0,
@@ -353,7 +364,7 @@ class SupabaseAuthClient {
           phone: userData.phone,
           name: userData.name,
           created_at: userData.created_at,
-          couponCount: profileData.coupon_count || 0,
+          couponCount: couponCount || 0,
           subscriptionStatus: profileData.subscription_status || 'none',
           notificationEnabled: profileData.notification_enabled || true,
           totalServices: profileData.total_services || 0,

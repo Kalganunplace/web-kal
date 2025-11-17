@@ -506,7 +506,6 @@ export default function UsageHistoryPage() {
       <>
         <TopBanner
           title="이용내역"
-          onBackClick={() => router.back()}
         />
         <div className="flex flex-col items-center justify-center h-96">
           <div className="w-12 h-12 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500 mb-4"></div>
@@ -521,7 +520,6 @@ export default function UsageHistoryPage() {
       {/* Top Banner */}
       <TopBanner
         title="이용내역"
-        onBackClick={() => router.back()}
       />
 
       <div className="flex flex-col items-center gap-5 px-0">

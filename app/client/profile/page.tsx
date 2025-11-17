@@ -169,36 +169,6 @@ export default function ProfilePage() {
           <Typography variant="h2" color="#333333" className="font-extrabold">
             {user.name}님
           </Typography>
-          {userProfile && (
-            <div className="flex items-center justify-center gap-4 text-sm text-[#666666]">
-              {/* <div className="flex items-center gap-1">
-                <span>등급</span>
-                <span className="font-bold text-[#E67E22] capitalize">
-                  {userProfile.memberGrade}
-                </span>
-              </div> */}
-              <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-              <div className="flex items-center gap-1">
-                <span>서비스</span>
-                <span className="font-bold text-[#E67E22]">
-                  {userProfile.totalServices}회
-                </span>
-              </div>
-              <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-              <div className="flex items-center gap-1">
-                <span>가입</span>
-                <span className="font-bold">
-                  {userProfile.created_at ?
-                    new Date(userProfile.created_at).toLocaleDateString('ko-KR', {
-                      year: '2-digit',
-                      month: '2-digit'
-                    }) :
-                    '24.01'
-                  }
-                </span>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* 구독 배너 - 관리자 설정 배너 또는 기본 배너 */}
@@ -301,16 +271,18 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* 내 보유 쿠폰 버튼 */}
-        <button
-          onClick={() => router.push("/client/coupons")}
-          className="w-full h-12 bg-[#E67E22] text-white font-bold rounded-md flex items-center justify-center space-x-1 shadow-sm"
-        >
-          <div className="w-6 h-6 text-white">🎫</div>
-          <span>
-            내 보유 쿠폰 {userProfile?.couponCount ? `(${userProfile.couponCount}개)` : ''}
-          </span>
-        </button>
+        {/* 내 보유 쿠폰 버튼 - 쿠폰이 있을 때만 표시 */}
+        {userProfile?.couponCount != null && userProfile.couponCount > 0 && (
+          <button
+            onClick={() => router.push("/client/coupons")}
+            className="w-full h-12 bg-[#E67E22] text-white font-bold rounded-md flex items-center justify-center space-x-1 shadow-sm"
+          >
+            <div className="w-6 h-6 text-white">🎫</div>
+            <span>
+              내 보유 쿠폰 ({userProfile.couponCount}개)
+            </span>
+          </button>
+        )}
 
         {/* 메뉴 리스트 */}
         <div className="bg-white rounded-lg shadow-sm">

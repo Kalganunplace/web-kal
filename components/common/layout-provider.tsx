@@ -4,6 +4,7 @@ import BottomNavigation from '@/components/common/bottom-navigation'
 import { useAuthStore } from '@/stores/auth-store'
 import { usePathname } from 'next/navigation'
 import React, { createContext, ReactNode, useContext, useState } from 'react'
+import { useUnreadNotificationCount } from '@/hooks/queries/use-notification'
 
 // Layout context
 interface LayoutContextType {
@@ -30,6 +31,7 @@ interface LayoutProviderProps {
 
 export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   const pathname = usePathname()
+  const { hasUnread } = useUnreadNotificationCount()
   const [hasNotification, setHasNotification] = useState(true)
 
   // Initialize auth store - only once on mount
@@ -78,7 +80,7 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
 
             {/* Bottom Navigation - only show on main pages */}
             {showNavigation && (
-              <BottomNavigation hasNotification={hasNotification} />
+              <BottomNavigation hasNotification={hasUnread} />
             )}
           </div>
         </div>
