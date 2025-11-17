@@ -4,7 +4,9 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Label } from "@/components/ui/label"
 import TopBanner from "@/components/ui/top-banner"
-import { BodyMedium, BodySmall, CaptionMedium } from "@/components/ui/typography"
+import BottomSheet from "@/components/ui/bottom-sheet"
+import { Button } from "@/components/ui/button"
+import { BodyMedium, BodySmall, CaptionMedium, Heading3 } from "@/components/ui/typography"
 import { useAuthHydration } from "@/hooks/use-auth-hydration"
 import { AuthUser } from "@/lib/auth/supabase"
 
@@ -12,6 +14,7 @@ export default function MemberInfoPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuthHydration()
   const [dataLoading, setDataLoading] = useState(true)
+  const [isWithdrawBottomSheetOpen, setIsWithdrawBottomSheetOpen] = useState(false)
 
   // 회원 정보 상태
   const [memberInfo, setMemberInfo] = useState<AuthUser | null>(null)
@@ -27,12 +30,19 @@ export default function MemberInfoPage() {
     }
   }, [user, authLoading, router])
 
-  const handleWithdraw = () => {
-    if (confirm("정말로 회원탈퇴를 하시겠습니까?")) {
-      // 회원탈퇴 로직
-      alert("회원탈퇴가 처리되었습니다.")
-      router.push("/")
-    }
+  const handleWithdrawClick = () => {
+    setIsWithdrawBottomSheetOpen(true)
+  }
+
+  const handleWithdrawConfirm = () => {
+    // 회원탈퇴 로직
+    alert("회원탈퇴가 처리되었습니다.")
+    setIsWithdrawBottomSheetOpen(false)
+    router.push("/")
+  }
+
+  const handleWithdrawCancel = () => {
+    setIsWithdrawBottomSheetOpen(false)
   }
 
   // 로딩 중이거나 사용자 정보가 없는 경우
@@ -89,7 +99,7 @@ export default function MemberInfoPage() {
           {/* 회원탈퇴 버튼 */}
           <div className="pt-12 border-t border-gray-200">
             <button
-              onClick={handleWithdraw}
+              onClick={handleWithdrawClick}
               className="w-full py-4 text-center"
             >
               <BodySmall color="#999999" className="underline">
@@ -109,6 +119,41 @@ export default function MemberInfoPage() {
         {/* Spacer for bottom navigation */}
         <div className="h-20" />
       </div>
+
+      {/* 회원탈퇴 확인 바텀시트 */}
+      <BottomSheet
+        isOpen={isWithdrawBottomSheetOpen}
+        onClose={handleWithdrawCancel}
+      >
+        <div className="p-6 space-y-6">
+          <div className="text-center space-y-3">
+            <div className="text-5xl">⚠️</div>
+            <Heading3 color="#333333" className="font-bold">
+              정말로 탈퇴하시겠습니까?
+            </Heading3>
+            <BodyMedium color="#666666">
+              탈퇴 시 모든 정보가 삭제되며,<br />
+              복구할 수 없습니다.
+            </BodyMedium>
+          </div>
+
+          <div className="space-y-3">
+            <Button
+              onClick={handleWithdrawConfirm}
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl"
+            >
+              탈퇴하기
+            </Button>
+            <Button
+              onClick={handleWithdrawCancel}
+              variant="outline"
+              className="w-full border-gray-300 text-gray-700 font-bold py-3 rounded-xl"
+            >
+              취소
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
     </>
   )
 }
