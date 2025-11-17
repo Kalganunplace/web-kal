@@ -189,8 +189,8 @@ export default function PriceList() {
             <div>
               <h4 className="font-bold text-sm text-gray-800 mb-1">불량 칼</h4>
               <BodySmall color="#666666">
-                날이 휘었거나 녹슨 칼은 연마가 불가능할 수 있으므,<br />
-                미리 말이 나거나나 분리된 칼은 연마가 어려우, 별도 비<br />
+                날이 휘었거나 녹슨 칼은 연마가 불가능할 수 있으므로,<br />
+                미리 날이 나거나 분리된 칼은 연마가 어려우며, 별도 비<br />
                 용이 발생할 수 있어요.
               </BodySmall>
             </div>
@@ -222,7 +222,7 @@ export default function PriceList() {
             <div>
               <h4 className="font-bold text-sm text-gray-800 mb-1">칼날 마모</h4>
               <BodySmall color="#666666">
-                오랜 사용이나 미세하게 갈여 자국 연마하면 칼이 짧아질<br />
+                오랜 사용이나 미세하게 갈린 자국을 연마하면 칼이 짧아질<br />
                 수 있어요.
               </BodySmall>
             </div>
@@ -238,8 +238,8 @@ export default function PriceList() {
             <div>
               <h4 className="font-bold text-sm text-gray-800 mb-1">브랜드 제한</h4>
               <BodySmall color="#666666">
-                일부 제조사에는 특정 연마 방식을 권장하지 않을 수 없<br />
-                어요. (예: 샤프닝 스틸)
+                일부 제조사에서는 특정 연마 방식을 권장하지 않을 수 있<br />
+                어요. (예: 샤프닝 금지)
               </BodySmall>
             </div>
 
@@ -253,7 +253,7 @@ export default function PriceList() {
             <div>
               <h4 className="font-bold text-sm text-gray-800 mb-1">각인 훼손 가능</h4>
               <BodySmall color="#666666">
-                어들이 새겨진 칼은 연마로 글씨가 흐려질 수 있어<br />
+                글씨가 새겨진 칼은 연마로 글씨가 흐려질 수 있어<br />
                 요.
               </BodySmall>
             </div>
@@ -261,8 +261,8 @@ export default function PriceList() {
             <div>
               <h4 className="font-bold text-sm text-gray-800 mb-1">연마 후 복구 불가</h4>
               <BodySmall color="#666666">
-                연마 작업이 완료된 칼은 복구가 어려우나, 작업 전 내용<br />
-                를 꼭 확인해 주세요.
+                연마 작업이 완료된 칼은 복구가 어려우니, 작업 전 내용<br />
+                을 꼭 확인해 주세요.
               </BodySmall>
             </div>
           </div>
@@ -295,33 +295,24 @@ export default function PriceList() {
               </div>
             </div>
 
-            {/* 정상 가격 */}
-            <div className="text-center">
-              <span className="text-base text-gray-700">
-                [정상 {formatPrice(selectedKnife.market_price)}]
-              </span>
-            </div>
-
-            {/* 쿠폰 사용 시 가격 정보 */}
+            {/* 가격 정보 */}
             <div className="space-y-3">
-              <h4 className="text-sm text-gray-700 font-medium">쿠폰 사용 시</h4>
-
-              <div className="flex gap-3">
-                {/* 쿠폰명 */}
-                <div className="flex-1 bg-[#F2F2F2] rounded-lg p-4 flex items-center justify-center">
-                  <span className="text-sm text-gray-600">
-                    {selectedKnife.coupon_price !== undefined && selectedKnife.coupon_price !== selectedKnife.discount_price
-                      ? "(쿠폰할인)"
-                      : "(일반할인)"}
+              {/* 시장가 */}
+              <div className="bg-[#F2F2F2] rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-700 font-medium">시장가</span>
+                  <span className="text-base text-gray-700 line-through">
+                    {formatPrice(selectedKnife.market_price)}
                   </span>
                 </div>
+              </div>
 
-                {/* 쿠폰 적용가 */}
-                <div className="flex-1 bg-[#F2F2F2] rounded-lg p-4 flex items-center justify-center">
+              {/* 칼가는곳 할인가 */}
+              <div className="bg-[#FFF4E6] rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-700 font-medium">칼가는곳 할인가</span>
                   <span className="text-lg font-bold text-[#E67E22]">
-                    [{selectedKnife.coupon_price !== undefined && selectedKnife.coupon_price !== selectedKnife.discount_price
-                      ? formatPrice(selectedKnife.coupon_price)
-                      : formatPrice(selectedKnife.discount_price)}]
+                    {formatPrice(selectedKnife.discount_price)}
                   </span>
                 </div>
               </div>
