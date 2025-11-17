@@ -105,27 +105,11 @@ export default function HomePage() {
   }
 
   const handleEvent = () => {
-    if (!loading && !authUser) {
-      setLoginSheetConfig({
-        title: "이벤트 참여하기",
-        message: "신규고객 전용 1+1 이벤트에 참여하려면 로그인이 필요합니다."
-      })
-      setShowLoginSheet(true)
-      return
-    }
-    router.push("/events/new-customer")
+    router.push("/client/knife-request")
   }
 
   const handleSubscription = () => {
-    if (!loading && !authUser) {
-      setLoginSheetConfig({
-        title: "구독 서비스 신청하기",
-        message: "구독 서비스를 이용하려면 로그인이 필요합니다."
-      })
-      setShowLoginSheet(true)
-      return
-    }
-    router.push("/client/subscription")
+    router.push("/client/knife-request")
   }
 
   return (
@@ -236,7 +220,7 @@ export default function HomePage() {
           {/* Event Banner */}
           {eventBanner ? (
             <button
-              onClick={() => eventBanner.link_url ? router.push(eventBanner.link_url) : handleEvent()}
+              onClick={handleEvent}
               className="w-full aspect-[33/12] rounded-3xl shadow-md relative overflow-hidden hover:scale-[1.02] transition-transform"
             >
               <Image
@@ -309,7 +293,7 @@ export default function HomePage() {
           {/* Subscription Banner */}
           {subscriptionBanner ? (
             <button
-              onClick={() => subscriptionBanner.link_url ? router.push(subscriptionBanner.link_url) : handleSubscription()}
+              onClick={handleSubscription}
               className="w-full aspect-[33/12] rounded-3xl shadow-md relative overflow-hidden hover:scale-[1.02] transition-transform"
             >
               <Image
