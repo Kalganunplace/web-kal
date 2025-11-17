@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, BodySmall, CaptionMedium } from "@/components/ui/typography"
@@ -13,91 +11,21 @@ import { AuthUser } from "@/lib/auth/supabase"
 export default function MemberInfoPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuthHydration()
-  const [isEditing, setIsEditing] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
-  
+
   // 회원 정보 상태
   const [memberInfo, setMemberInfo] = useState<AuthUser | null>(null)
-
-  // 수정 중인 정보 상태
-  const [editInfo, setEditInfo] = useState({
-    name: "",
-    phone: ""
-  })
 
   // 사용자 정보 로드
   useEffect(() => {
     if (user && !authLoading) {
       setMemberInfo(user)
-      setEditInfo({
-        name: user.name,
-        phone: user.phone
-      })
       setDataLoading(false)
     } else if (!authLoading && !user) {
       // 로그인하지 않은 경우 홈으로 리다이렉트
       router.push('/')
     }
   }, [user, authLoading, router])
-
-  const handleSave = async () => {
-    if (!memberInfo?.id) return
-
-    setLoading(true)
-
-    try {
-      // API 라우트를 통해 프로필 수정 (JWT 토큰은 HttpOnly 쿠키로 자동 전달됨)
-      const response = await fetch('/api/user/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // 쿠키 포함
-        body: JSON.stringify({
-          name: editInfo.name,
-          phone: editInfo.phone
-        })
-      })
-
-      const result = await response.json()
-
-      if (result.success && result.data) {
-        // 정보 업데이트 성공
-        setMemberInfo(result.data)
-        setIsEditing(false)
-        alert('회원 정보가 성공적으로 수정되었습니다.')
-      } else {
-        // 오류 처리
-        alert(result.error || '정보 수정에 실패했습니다.')
-        // 에러시 원래 값으로 복원
-        setEditInfo({
-          name: memberInfo.name,
-          phone: memberInfo.phone
-        })
-      }
-    } catch (error) {
-      console.error("정보 수정 중 오류 발생:", error)
-      alert('정보 수정 중 오류가 발생했습니다.')
-      // 에러시 원래 값으로 복원
-      setEditInfo({
-        name: memberInfo.name,
-        phone: memberInfo.phone
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleCancel = () => {
-    if (memberInfo) {
-      setEditInfo({
-        name: memberInfo.name,
-        phone: memberInfo.phone
-      })
-    }
-    setIsEditing(false)
-  }
 
   const handleWithdraw = () => {
     if (confirm("정말로 회원탈퇴를 하시겠습니까?")) {
@@ -134,91 +62,28 @@ export default function MemberInfoPage() {
 
       <div className="flex-1 px-5 py-6 bg-gray-50">
         <div className="space-y-6">
-          {/* 이름 입력 */}
+          {/* 이름 (읽기 전용) */}
           <div className="space-y-3">
             <Label htmlFor="name" className="text-sm font-medium text-gray-700">
               이름
             </Label>
-            {isEditing ? (
-              <Input
-                id="name"
-                type="text"
-                value={editInfo.name}
-                onChange={(e) => setEditInfo({...editInfo, name: e.target.value})}
-                className="w-full h-14 px-4 border border-gray-300 rounded-xl bg-white text-lg"
-                placeholder="이름을 입력하세요"
-              />
-            ) : (
-              <div className="w-full h-14 px-4 border border-gray-300 rounded-xl bg-gray-100 flex items-center">
-                <BodyMedium color="#333333" className="text-lg">
-                  {memberInfo.name}
-                </BodyMedium>
-              </div>
-            )}
+            <div className="w-full h-14 px-4 border border-gray-300 rounded-xl bg-gray-100 flex items-center">
+              <BodyMedium color="#333333" className="text-lg">
+                {memberInfo.name}
+              </BodyMedium>
+            </div>
           </div>
 
-          {/* 휴대폰 번호 입력 */}
+          {/* 휴대폰 번호 (읽기 전용) */}
           <div className="space-y-3">
             <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
               휴대폰 번호
             </Label>
-            {isEditing ? (
-              <Input
-                id="phone"
-                type="tel"
-                value={editInfo.phone}
-                onChange={(e) => setEditInfo({...editInfo, phone: e.target.value})}
-                className="w-full h-14 px-4 border border-gray-300 rounded-xl bg-white text-lg"
-                placeholder="휴대폰 번호를 입력하세요"
-                maxLength={11}
-              />
-            ) : (
-              <div className="w-full h-14 px-4 border border-gray-300 rounded-xl bg-gray-100 flex items-center">
-                <BodyMedium color="#333333" className="text-lg">
-                  {memberInfo.phone}
-                </BodyMedium>
-              </div>
-            )}
-          </div>
-
-          {/* 버튼 영역 */}
-          <div className="pt-8 space-y-4">
-            {!isEditing ? (
-              <>
-                <Button
-                  onClick={() => setIsEditing(true)}
-                  className="w-full h-14 bg-[#E67E22] hover:bg-[#D35400] text-white font-bold rounded-xl text-lg"
-                >
-                  정보 수정하기
-                </Button>
-                
-                <Button
-                  onClick={() => router.push("/client/address-settings")}
-                  variant="outline"
-                  className="w-full h-14 border-gray-300 text-gray-700 font-medium rounded-xl text-lg hover:bg-gray-50"
-                >
-                  주소 설정
-                </Button>
-              </>
-            ) : (
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleCancel}
-                  variant="outline"
-                  className="flex-1 h-14 border-gray-300 text-gray-700 font-medium rounded-xl text-lg hover:bg-gray-50"
-                  disabled={loading}
-                >
-                  취소
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  className="flex-1 h-14 bg-[#E67E22] hover:bg-[#D35400] text-white font-bold rounded-xl text-lg disabled:opacity-50"
-                  disabled={loading}
-                >
-                  {loading ? "저장 중..." : "저장"}
-                </Button>
-              </div>
-            )}
+            <div className="w-full h-14 px-4 border border-gray-300 rounded-xl bg-gray-100 flex items-center">
+              <BodyMedium color="#333333" className="text-lg">
+                {memberInfo.phone}
+              </BodyMedium>
+            </div>
           </div>
 
           {/* 회원탈퇴 버튼 */}

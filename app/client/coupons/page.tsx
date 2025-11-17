@@ -8,7 +8,6 @@ import { BodyMedium, BodySmall, CaptionMedium, Heading2, Heading3 } from "@/comp
 import { Skeleton } from "@/components/ui/skeleton"
 import { createClient } from "@/lib/auth/supabase"
 import { useAuthAware } from "@/hooks/use-auth-aware"
-import { CouponDetailModal } from "@/components/features/coupon/coupon-detail-modal"
 
 interface Coupon {
   id: string
@@ -30,8 +29,6 @@ export default function CouponsPage() {
   const { user, isAuthenticated } = useAuthAware()
   const [loading, setLoading] = useState(true)
   const [coupons, setCoupons] = useState<Coupon[]>([])
-  const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -224,10 +221,7 @@ export default function CouponsPage() {
 
                 <div className="border-t border-gray-100 pt-3">
                   <Button
-                    onClick={() => {
-                      setSelectedCoupon(coupon)
-                      setIsModalOpen(true)
-                    }}
+                    onClick={() => router.push(`/client/coupons/${coupon.id}`)}
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold"
                   >
                     자세히보기
@@ -273,18 +267,6 @@ export default function CouponsPage() {
         {/* Spacer for bottom navigation */}
         <div className="h-20" />
       </div>
-
-      {/* 쿠폰 상세 모달 */}
-      {selectedCoupon && (
-        <CouponDetailModal
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false)
-            setSelectedCoupon(null)
-          }}
-          coupon={selectedCoupon}
-        />
-      )}
     </>
   )
 }
