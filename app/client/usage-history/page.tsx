@@ -503,15 +503,12 @@ export default function UsageHistoryPage() {
   // 로딩 상태 (인증 로딩 또는 데이터 로딩)
   if (authLoading || isLoading) {
     return (
-      <>
-        <TopBanner
-          title="이용내역"
-        />
-        <div className="flex flex-col items-center justify-center h-96">
-          <div className="w-12 h-12 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500 mb-4"></div>
+      <div className="min-h-screen w-full flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-[#E67E22] border-t-transparent rounded-full animate-spin mb-4"></div>
           <BodyMedium color="#767676">로딩 중...</BodyMedium>
         </div>
-      </>
+      </div>
     )
   }
 

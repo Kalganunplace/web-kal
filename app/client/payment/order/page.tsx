@@ -226,9 +226,14 @@ function KnifeRequestForm({ onComplete }: { onComplete: (data: CreateBookingData
 
 export default function OrderPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-gray-600">로딩 중...</div>
-    </div>}>
+    <Suspense fallback={
+      <div className="min-h-screen w-full flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-[#E67E22] border-t-transparent rounded-full animate-spin mb-4"></div>
+          <div className="text-gray-600">로딩 중...</div>
+        </div>
+      </div>
+    }>
       <OrderPageContent />
     </Suspense>
   )

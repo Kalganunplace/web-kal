@@ -200,9 +200,9 @@ export default function LoginPage() {
   // 로딩 중이거나 이미 인증된 사용자는 로딩 표시
   if (!isReady) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+      <div className="min-h-screen w-full flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-[#E67E22] border-t-transparent rounded-full animate-spin mb-4"></div>
           <p className="text-gray-600">로딩 중...</p>
         </div>
       </div>

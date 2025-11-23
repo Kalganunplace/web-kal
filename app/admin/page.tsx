@@ -69,10 +69,10 @@ export default function AdminDashboard() {
   // 로딩 중
   if (!hydrated || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
+      <div className="min-h-screen w-full flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-[#E67E22] border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-600">로딩 중...</p>
         </div>
       </div>
     );
