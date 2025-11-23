@@ -158,7 +158,7 @@ export default function AddressSettingsPage() {
                 addresses.map((address) => (
                   <div
                     key={address.id}
-                    className="bg-white rounded-xl p-4 border border-gray-200"
+                    className={address.is_default ? "bg-white rounded-xl p-4 border-2 border-[#E67E22]" : "bg-white border-2 rounded-xl p-4 border border-gray-200"}
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
@@ -189,7 +189,7 @@ export default function AddressSettingsPage() {
                           onClick={() => handleSetDefault(address.id)}
                           size="sm"
                           variant="outline"
-                          className="text-xs"
+                          className="text-xs h-8"
                           disabled={loading}
                         >
                           기본 설정
@@ -199,7 +199,7 @@ export default function AddressSettingsPage() {
                         onClick={() => handleDeleteAddress(address.id)}
                         size="sm"
                         variant="outline"
-                        className="text-xs text-red-500 border-red-200 hover:bg-red-50"
+                        className="text-xs h-8! text-red-500 border-2 border-red-500"
                         disabled={loading}
                       >
                         삭제

@@ -3,6 +3,7 @@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import BottomSheet from "@/components/ui/bottom-sheet"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { BodyMedium, BodySmall } from "@/components/ui/typography"
 import { isDaeguAddress } from "@/lib/kakao-address"
@@ -160,13 +161,13 @@ export function DaumAddressSearchBottomSheet({
         width: "100%",
         height: "450px",
         theme: {
-          bgColor: "#FFFFFF00",         // 전체 배경색
+          bgColor: "#FFFFFF",         // 전체 배경색
           searchBgColor: "#F97316",   // 검색창 배경색 (오렌지)
-          contentBgColor: "#FFFFFF00",  // 본문 배경색
-          pageBgColor: "#FFFFFF00",     // 페이지 배경색 (연한 회색)
-          textColor: "#333333",       // 기본 글자색
-          queryTextColor: "#FFFFFF",  // 검색어 글자색 (흰색)c
-          outlineColor: "#FFFFFF00"     // 선택 테두리색 (오렌지)
+          contentBgColor: "#FFFFFF",  // 본문 배경색
+          pageBgColor: "#FFFFFF",     // 페이지 배경색
+          textColor: "#333333",       // 기본 글자색 (주소 리스트)
+          queryTextColor: "#FFFFFF",  // 검색어 글자색 (흰색)
+          outlineColor: "#F97316"     // 선택 테두리색 (오렌지)
         }
       })
 
@@ -174,6 +175,59 @@ export function DaumAddressSearchBottomSheet({
       if (embedRef.current) {
         embedRef.current.innerHTML = ""
         postcode.embed(embedRef.current)
+
+        // iframe 스타일 주입 - 여러 번 시도하여 확실하게 적용
+        const injectStyles = () => {
+          const iframe = embedRef.current?.querySelector('iframe')
+          if (iframe?.contentDocument) {
+            try {
+              const style = iframe.contentDocument.createElement('style')
+              style.textContent = `
+                /* 주소 리스트 텍스트 색상 강제 변경 */
+                * {
+                  color: #333333 !important;
+                }
+                /* 검색창 입력 텍스트는 흰색 */
+                input,
+                input[type="text"],
+                input[type="search"] {
+                  color: #FFFFFF !important;
+                }
+                /* Placeholder 색상을 흰색으로 변경 */
+                input::placeholder,
+                input[type="text"]::placeholder,
+                input[type="search"]::placeholder {
+                  color: rgba(255, 255, 255, 0.8) !important;
+                }
+                input::-webkit-input-placeholder,
+                input[type="text"]::-webkit-input-placeholder,
+                input[type="search"]::-webkit-input-placeholder {
+                  color: rgba(255, 255, 255, 0.8) !important;
+                }
+                input::-moz-placeholder,
+                input[type="text"]::-moz-placeholder,
+                input[type="search"]::-moz-placeholder {
+                  color: rgba(255, 255, 255, 0.8) !important;
+                  opacity: 1 !important;
+                }
+                input:-ms-input-placeholder,
+                input[type="text"]:-ms-input-placeholder,
+                input[type="search"]:-ms-input-placeholder {
+                  color: rgba(255, 255, 255, 0.8) !important;
+                }
+              `
+              iframe.contentDocument.head.appendChild(style)
+              console.log('✅ Daum 주소 검색 스타일 주입 성공')
+            } catch (error) {
+              console.error('❌ Daum 주소 검색 스타일 주입 실패:', error)
+            }
+          }
+        }
+
+        // 여러 번 시도하여 스타일 주입
+        setTimeout(injectStyles, 100)
+        setTimeout(injectStyles, 300)
+        setTimeout(injectStyles, 500)
       }
     }
   }, [isOpen, isScriptLoaded, showAddressInput])
@@ -218,7 +272,13 @@ export function DaumAddressSearchBottomSheet({
         {/* 다음 우편번호 서비스 임베드 */}
         {!showAddressInput && (
           <div className="mb-4">
-            <div ref={embedRef} className="border border-gray-200 rounded-lg overflow-hidden" />
+            <style>{`
+              #daum-postcode input::placeholder {
+                color: #FFFFFF !important;
+                opacity: 0.8 !important;
+              }
+            `}</style>
+            <div id="daum-postcode" ref={embedRef} className="border border-gray-200 rounded-lg overflow-hidden" />
           </div>
         )}
 
@@ -235,7 +295,7 @@ export function DaumAddressSearchBottomSheet({
         {/* 선택된 주소 표시 및 추가 정보 입력 */}
         {showAddressInput && selectedAddress.address && (
           <div className="space-y-4">
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <div className="bg-white border-2 border-[#E67E22] rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-orange-500 mt-0.5" />
                 <div className="flex-1">
@@ -256,13 +316,13 @@ export function DaumAddressSearchBottomSheet({
                 <Label htmlFor="addressName" className="text-sm font-medium text-gray-700 mb-2 block">
                   주소 별칭
                 </Label>
-                <input
+                <Input
                   id="addressName"
                   type="text"
                   value={selectedAddress.name}
                   onChange={(e) => setSelectedAddress(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full h-12 px-4 border border-gray-300 rounded-lg bg-white text-sm"
                   placeholder="예: 집, 회사"
+                  className="h-12"
                 />
               </div>
             )}
@@ -273,13 +333,13 @@ export function DaumAddressSearchBottomSheet({
                 <Label htmlFor="detailAddress" className="text-sm font-medium text-gray-700 mb-2 block">
                   상세 주소 (필수)
                 </Label>
-                <input
+                <Input
                   id="detailAddress"
                   type="text"
                   value={selectedAddress.detailAddress}
                   onChange={(e) => setSelectedAddress(prev => ({ ...prev, detailAddress: e.target.value }))}
-                  className="w-full h-12 px-4 border border-gray-300 rounded-lg bg-white text-sm"
                   placeholder="상세 주소를 입력해 주세요"
+                  className="h-12"
                 />
               </div>
             )}
@@ -289,7 +349,7 @@ export function DaumAddressSearchBottomSheet({
               <Button
                 onClick={() => setShowAddressInput(false)}
                 variant="outline"
-                className="flex-1 h-12 rounded-lg text-sm font-medium"
+                className="flex-1 h-12 rounded-lg text-sm font-bold"
               >
                 다시 검색
               </Button>
@@ -298,7 +358,7 @@ export function DaumAddressSearchBottomSheet({
                 className={`flex-1 h-12 rounded-lg text-sm font-bold transition-colors ${
                   !selectedAddress.address || !selectedAddress.name || (showDetailAddress && !selectedAddress.detailAddress) || addressError
                     ? "bg-gray-400 text-white cursor-not-allowed"
-                    : "bg-[#E67E22] hover:bg-[#D35400] text-white"
+                    : "bg-[#E67E22] text-white border-2 border-[#E67E22]"
                 }`}
                 disabled={!selectedAddress.address || !selectedAddress.name || (showDetailAddress && !selectedAddress.detailAddress) || !!addressError}
               >

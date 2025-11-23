@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import BottomSheet from "@/components/ui/bottom-sheet"
 import { Button } from "@/components/ui/button"
 import { type Address } from "@/lib/address-service"
-import { Home, Building, MapPin } from "lucide-react"
+import { Building, Home, MapPin } from "lucide-react"
+import { useState } from "react"
 
 interface AddressSelectionBottomSheetProps {
   isOpen: boolean
@@ -122,7 +122,7 @@ export function AddressSelectionBottomSheet({
             className={`flex-1 h-12 rounded-lg text-sm font-bold transition-colors ${
               !tempSelectedId
                 ? 'bg-gray-400 text-white cursor-not-allowed'
-                : 'bg-[#E67E22] hover:bg-[#D35400] text-white'
+                : 'bg-[#E67E22] border-2 border-[#E67E22] text-white'
             }`}
           >
             선택 완료

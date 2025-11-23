@@ -147,6 +147,27 @@ html {
   outline: none !important;
 }
 
+/* Placeholder 색상 - 흰색 */
+#region_name::placeholder {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+.popup_post_type1 .tf_keyword::-webkit-input-placeholder {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+.popup_post_type1 .tf_keyword::-moz-placeholder {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+.popup_post_type1 .tf_keyword:-ms-input-placeholder {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
 .popup_post_type1 .placeholder {
   color: #999999 !important;
 }
