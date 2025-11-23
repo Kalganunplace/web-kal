@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { CaptionMedium } from "@/components/ui/typography"
+import TopBanner from "@/components/ui/top-banner"
 import { supabase } from "@/lib/auth/supabase"
 import { useAuth } from "@/stores/auth-store"
 import { useAuthHydration } from "@/hooks/use-auth-hydration"
-import { ChevronLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -211,18 +211,16 @@ export default function LoginPage() {
 
   if (step === "phone") {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-white">
         <div className="max-w-[500px] mx-auto bg-white min-h-screen flex flex-col">
           {/* Header */}
-          <div className="flex items-center p-4 border-b">
-            <button onClick={() => router.back()} className="p-2 -ml-2">
-              <ChevronLeft size={24} />
-            </button>
-            <h1 className="text-lg font-bold ml-2">로그인</h1>
-          </div>
+          <TopBanner
+            title="로그인"
+            onBackClick={() => router.back()}
+          />
 
           {/* Content */}
-          <div className="flex-1 flex flex-col justify-center p-6 space-y-6">
+          <div className="flex-1 flex flex-col justify-center px-5 py-6 space-y-6">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold text-gray-900">
                 칼가는곳에 오신 것을
@@ -245,7 +243,7 @@ export default function LoginPage() {
                     value={phone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
                     disabled={loading}
-                    className="text-lg h-12"
+                    className="text-lg h-12 border-2 border-gray-300 focus:border-orange-500 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </div>
 
@@ -283,18 +281,16 @@ export default function LoginPage() {
 
   // 인증번호 입력 단계
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-white">
       <div className="max-w-[500px] mx-auto bg-white min-h-screen flex flex-col">
         {/* Header */}
-        <div className="flex items-center p-4 border-b">
-          <button onClick={() => setStep("phone")} className="p-2 -ml-2">
-            <ChevronLeft size={24} />
-          </button>
-          <h1 className="text-lg font-bold ml-2">인증번호 입력</h1>
-        </div>
+        <TopBanner
+          title="인증번호 입력"
+          onBackClick={() => setStep("phone")}
+        />
 
         {/* Content */}
-        <div className="flex-1 flex flex-col justify-center p-6 space-y-6">
+        <div className="flex-1 flex flex-col justify-center px-5 py-6 space-y-6">
           <div className="text-center space-y-2">
             <h2 className="text-xl font-bold text-gray-900">
               인증번호를 입력해주세요
@@ -338,7 +334,7 @@ export default function LoginPage() {
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
                   disabled={loading}
-                  className="text-lg h-12 text-center tracking-widest"
+                  className="text-lg h-12 text-center tracking-widest border-2 border-gray-300 focus:border-orange-500 focus-visible:ring-0 focus-visible:ring-offset-0"
                   maxLength={6}
                 />
               </div>
