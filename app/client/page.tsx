@@ -177,7 +177,7 @@ export default function HomePage() {
             variant="white"
             size="md"
             onClick={mainBanner?.link_url ? () => router.push(mainBanner.link_url!) : handleKnifeRequest}
-            className="w-4/5 bg-[#F2F2F2] rounded-md shadow-lg flex justify-center items-center px-4 py-6 z-10"
+            className="w-[280px] bg-[#F2F2F2] rounded-md shadow-lg flex justify-center items-center px-4 py-6 z-10"
           >
             <span className="text-[#E67E22] text-base font-extrabold leading-none">
               <AuthAware fallback="첫 칼갈이 신청하기">

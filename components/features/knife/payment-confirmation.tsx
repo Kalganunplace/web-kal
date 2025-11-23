@@ -213,18 +213,12 @@ export default function PaymentConfirmation() {
 
   if (isLoading) {
     return (
-      <>
-        <TopBanner
-          title="결제정보 확인"
-          onBackClick={() => router.back()}
-        />
-        <div className="flex-1 flex items-center justify-center bg-white">
-          <div className="flex flex-col items-center">
-            <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="text-sm text-gray-600">로딩 중...</p>
-          </div>
+      <div className="min-h-screen w-full flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-[#E67E22] border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-sm text-gray-600">로딩 중...</p>
         </div>
-      </>
+      </div>
     )
   }
 

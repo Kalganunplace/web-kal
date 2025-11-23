@@ -223,19 +223,12 @@ export default function KnifeRequest({
   // 로딩 중
   if (isLoading) {
     return (
-      <>
-        <TopBanner
-          title="칼갈이 신청"
-          onBackClick={() => router.back()}
-        />
-
-        <div className="flex-1 flex items-center justify-center bg-gray-50">
-          <div className="flex flex-col items-center">
-            <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <BodyMedium color="#666666">로딩 중...</BodyMedium>
-          </div>
+      <div className="min-h-screen w-full flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-[#E67E22] border-t-transparent rounded-full animate-spin mb-4"></div>
+          <BodyMedium color="#666666">로딩 중...</BodyMedium>
         </div>
-      </>
+      </div>
     )
   }
 
