@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import TopBanner from "@/components/ui/top-banner"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
-import { ChevronRight } from "lucide-react"
+import { ChevronDown, ChevronRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -231,7 +231,7 @@ export default function PaymentConfirmation() {
 
       <div className="flex-1 pb-6 bg-[#F5F5F5] overflow-y-auto">
         {/* 상품 정보 */}
-        <section className="mb-4 bg-white p-5 shadow-sm">
+        <section className="mb-4 bg-white p-5 shadow-md">
           <h3 className="text-base font-bold text-[#333333] mb-3">상품 정보</h3>
 
           <div className="space-y-3">
@@ -255,12 +255,12 @@ export default function PaymentConfirmation() {
                     <h4 className="font-bold text-[#333333]">{knifeType.name}</h4>
                     <p className="text-xs text-[#999999]">개당 {knifeService.formatPrice(knifeType.discount_price)}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <div className="w-6 h-6 rounded-full border-2 border-[#E67E22] flex items-center justify-center">
-                        <span className="text-xs text-[#E67E22]">-</span>
+                      <div className="w-6 h-6 rounded-full border-2 border-[#CCCCCC] bg-[#F5F5F5] flex items-center justify-center cursor-not-allowed">
+                        <span className="text-xs text-[#CCCCCC]">-</span>
                       </div>
                       <span className="text-base font-bold text-[#333333] w-6 text-center">{item.quantity}</span>
-                      <div className="w-6 h-6 rounded-full border-2 border-[#E67E22] flex items-center justify-center">
-                        <span className="text-xs text-[#E67E22]">+</span>
+                      <div className="w-6 h-6 rounded-full border-2 border-[#CCCCCC] bg-[#F5F5F5] flex items-center justify-center cursor-not-allowed">
+                        <span className="text-xs text-[#CCCCCC]">+</span>
                       </div>
                     </div>
                   </div>
@@ -280,7 +280,9 @@ export default function PaymentConfirmation() {
 
           {/* 총 수량 및 금액 */}
           <div className="flex items-center justify-between">
-            <span className="text-base font-bold text-[#333333]">총 수량 {totalQuantity}개</span>
+            <span className="text-base font-bold text-[#333333]">
+              총 수량 <span className="text-[#F97316]">{totalQuantity}</span>개
+            </span>
             <div className="text-right">
               {couponDiscount > 0 ? (
                 <>
@@ -298,13 +300,13 @@ export default function PaymentConfirmation() {
             {couponDiscount > 0 ? (
               <p className="text-xs text-[#999999]">{knifeService.formatPrice(couponDiscount)} 할인 적용</p>
             ) : (
-              <p className="text-xs text-[#E67E22]">부가세 별도</p>
+              <p className="text-xs text-[#999999]">부가세 별도</p>
             )}
           </div>
         </section>
 
         {/* 주소 상세 */}
-        <section className="mb-4 bg-white p-5 shadow-sm">
+        <section className="mb-4 bg-white p-5 shadow-md">
           <h3 className="text-base font-bold text-[#333333] mb-3">주소 상세</h3>
 
           {selectedAddress ? (
@@ -320,7 +322,7 @@ export default function PaymentConfirmation() {
 
               <button
                 onClick={() => setShowAddressSelectionSheet(true)}
-                className="w-full mt-3 py-3 bg-[#F2F2F2] text-[#E67E22] rounded-2xl font-bold text-sm"
+                className="w-full mt-3 h-14 bg-[#F2F2F2] text-[#E67E22] rounded-2xl font-bold text-sm"
               >
                 주소 변경하기
               </button>
@@ -328,15 +330,15 @@ export default function PaymentConfirmation() {
           ) : (
             <button
               onClick={() => router.push('/client/address-settings')}
-              className="w-full py-4 bg-[#FFF7ED] border-2 border-[#E67E22] text-[#E67E22] rounded-2xl font-bold text-sm"
+              className="w-full py-4 bg-[#E67E22] h-14 text-[#ffffff] rounded-lg font-black text-sm"
             >
-              주소를 등록해주세요
+              주소를 등록하기
             </button>
           )}
         </section>
 
         {/* 예약 일정 */}
-        <section className="mb-4 bg-white p-5 shadow-sm">
+        <section className="mb-4 bg-white p-5 shadow-md">
           <h3 className="text-base font-bold text-[#333333] mb-3">예약 일정</h3>
 
           {!isEditingSchedule ? (
@@ -347,13 +349,13 @@ export default function PaymentConfirmation() {
                 </p>
                 <p className="text-xs text-[#999999] mt-1">
                   예약이 확정되면 바로 알림 드릴게요 :)<br />
-                  집을 확인해 주세요!
+                  앱을 확인해주세요!
                 </p>
               </div>
 
               <button
                 onClick={handleStartEditingSchedule}
-                className="w-full mt-3 py-3 bg-[#F2F2F2] text-[#E67E22] rounded-2xl font-bold text-sm"
+                className="w-full mt-3 h-14 bg-[#F2F2F2] text-[#E67E22] rounded-lg font-black text-sm"
               >
                 일정 변경하기
               </button>
@@ -416,10 +418,10 @@ export default function PaymentConfirmation() {
         </section>
 
         {/* 쿠폰 등록 */}
-        <section className="mb-4 bg-white  p-5 shadow-sm">
+        <section className="mb-4 bg-white  p-5 shadow-md">
           <h3 className="text-base font-bold text-[#333333] mb-3">쿠폰 등록</h3>
 
-          <div className="relative">
+          <div className="relative group">
             <select
               value={selectedCoupon?.id || ""}
               onChange={(e) => {
@@ -427,7 +429,7 @@ export default function PaymentConfirmation() {
                 setSelectedCoupon(coupon || null)
               }}
               disabled={availableCoupons.length === 0}
-              className="w-full py-3 px-4 pr-10 border border-[#E0E0E0] rounded-2xl focus:border-[#E67E22] focus:outline-none appearance-none bg-white disabled:bg-gray-100 disabled:cursor-not-allowed text-[#333333]"
+              className="w-full h-12 px-4 pr-10 border-2 border-[#CCCCCC] rounded-lg focus:border-[#F97316] focus:outline-none appearance-none bg-white disabled:bg-gray-100 disabled:cursor-not-allowed text-[#333333]"
             >
               <option value="">
                 {availableCoupons.length === 0 ? '사용 가능한 쿠폰이 없습니다' : '쿠폰 선택하기'}
@@ -438,7 +440,7 @@ export default function PaymentConfirmation() {
                 </option>
               ))}
             </select>
-            <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#999999] pointer-events-none rotate-90" />
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#CCCCCC] group-focus-within:text-[#F97316] pointer-events-none transition-colors" />
           </div>
 
           {/* 선택된 쿠폰 할인 표시 */}
@@ -453,7 +455,7 @@ export default function PaymentConfirmation() {
         </section>
 
         {/* 결제 방법 */}
-        <section className="mb-4 bg-white p-5 shadow-sm">
+        <section className="mb-4 bg-white p-5 shadow-md">
           <h3 className="text-base font-bold text-[#333333] mb-3">결제 방법</h3>
 
           <div className="flex items-center gap-3">
@@ -462,7 +464,7 @@ export default function PaymentConfirmation() {
               className="flex items-center gap-2"
             >
               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                paymentMethod === 'deposit' ? 'border-[#E67E22]' : 'border-[#CCCCCC]'
+                paymentMethod === 'deposit' ? 'border-[#CCCCCC]' : 'border-[#CCCCCC]'
               }`}>
                 {paymentMethod === 'deposit' && (
                   <div className="w-3 h-3 rounded-full bg-[#E67E22]"></div>
@@ -476,7 +478,7 @@ export default function PaymentConfirmation() {
               className="flex items-center gap-2"
             >
               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                paymentMethod === 'simple' ? 'border-[#E67E22]' : 'border-[#CCCCCC]'
+                paymentMethod === 'simple' ? 'border-[#CCCCCC]' : 'border-[#CCCCCC]'
               }`}>
                 {paymentMethod === 'simple' && (
                   <div className="w-3 h-3 rounded-full bg-[#E67E22]"></div>
@@ -488,52 +490,52 @@ export default function PaymentConfirmation() {
         </section>
 
         {/* 환불 정책 */}
-        <section className="mb-4 bg-white  p-5 shadow-sm">
+        <section className="mb-4 bg-white  p-5 shadow-md">
           <h3 className="text-base font-bold text-[#333333] mb-3">환불 정책</h3>
 
           <div className="bg-[#F2F2F2] rounded-2xl p-4 space-y-2">
             <p className="text-xs text-[#666666] leading-relaxed">
-              • 예약일 서비스는 이용일 기준 24시간 전까지 최소 시 전액 환불됩니다.
+              • 예약된 서비스는 이용일 기준 24시간 전까지 취소 시 전액 환불됩니다.
             </p>
             <p className="text-xs text-[#666666] leading-relaxed">
               • 이용일 당일 취소 또는 무단 취소 시 환불이 불가합니다.
             </p>
             <p className="text-xs text-[#666666] leading-relaxed">
-              • 연마 작업이 이미 진행된 경우, 서비스 특성상 환불이 어려워요.
+              • 연마 작업이 이미 진행된 경우, 서비스 특성상 환불이 어렵습니다.
             </p>
             <p className="text-xs text-[#666666] leading-relaxed">
-              • 칼의 구조 상태의 경우, 사용 내역을 기준으로 환불 금액이 산정되어요.
+              • 정기 구독 상품의 경우, 사용 내역을 기준으로 환불 금액이 산정됩니다.
             </p>
             <p className="text-xs text-[#666666] leading-relaxed">
-              • 기타 환불 관련 문의는 고객센터를 통해 연락 주세요.
+              • 기타 환불 관련 문의는 고객센터를 통해 접수해 주세요.
             </p>
           </div>
 
           <div className="mt-4 space-y-2">
             <button
               onClick={() => router.push('/client/terms-detail?type=payment')}
-              className="w-full flex items-center justify-between py-3 px-4 bg-white border border-[#E0E0E0] rounded-2xl hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between py-3 px-4 bg-white "
             >
               <span className="text-sm text-[#333333]">결제 서비스 이용약관</span>
-              <ChevronRight className="w-4 h-4 text-[#999999]" />
+              <ChevronRight className="w-4 h-4 text-[#000000]" />
             </button>
             <button
               onClick={() => router.push('/client/terms-detail?type=privacy')}
-              className="w-full flex items-center justify-between py-3 px-4 bg-white border border-[#E0E0E0] rounded-2xl hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between py-3 px-4 bg-white "
             >
               <span className="text-sm text-[#333333]">개인정보 수집 및 이용 동의</span>
-              <ChevronRight className="w-4 h-4 text-[#999999]" />
+              <ChevronRight className="w-4 h-4 text-[#000000]" />
             </button>
             <button
               onClick={() => router.push('/client/terms-detail?type=provision')}
-              className="w-full flex items-center justify-between py-3 px-4 bg-white border border-[#E0E0E0] rounded-2xl hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between py-3 px-4 bg-white "
             >
               <span className="text-sm text-[#333333]">개인정보 제공 안내</span>
-              <ChevronRight className="w-4 h-4 text-[#999999]" />
+              <ChevronRight className="w-4 h-4 text-[#000000]" />
             </button>
           </div>
 
-          <p className="text-xs text-[#999999] mt-4 text-center">
+          <p className="text-xs pl-4 text-[#999999] mt-4 text-start">
             구매 내용이 동의하시면 결제 버튼을 눌러주세요.
           </p>
         </section>
@@ -541,7 +543,7 @@ export default function PaymentConfirmation() {
         {/* 결제하기 버튼 */}
         <div className="flex justify-center items-center px-5">
           <Button
-            className="w-full bg-[#E67E22] hover:bg-[#D35400] text-white rounded-xl py-4 font-bold text-lg disabled:bg-gray-300"
+            className="w-full h-14 bg-[#E67E22] hover:bg-[#D35400] text-white rounded-lg font-bold text-lg disabled:bg-[#B0B0B0] disabled:text-white"
             onClick={handlePayment}
             disabled={!selectedAddress}
           >
