@@ -203,10 +203,8 @@ export class KnifeService {
 
   formatPrice(price: number): string {
     return new Intl.NumberFormat('ko-KR', {
-      style: 'currency',
-      currency: 'KRW',
       minimumFractionDigits: 0
-    }).format(price)
+    }).format(price) + '원'
   }
 
   // 칼 종류별 추천 관리 방법 제공
