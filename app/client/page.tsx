@@ -131,28 +131,28 @@ export default function HomePage() {
         </div>
 
         {/* Main Banner */}
-        <div className="w-full aspect-[33/36] bg-gray-200 rounded-3xl shadow-lg relative overflow-hidden flex flex-col justify-end items-center gap-1 p-5">
+        <div className="w-full h-[360px] rounded-3xl shadow-lg relative overflow-hidden flex flex-col justify-end items-center gap-1 p-5">
           {/* Background Image */}
-          <div className="absolute inset-0 -left-1/4 w-[150%]">
+          <div className="absolute inset-0">
             {mainBanner ? (
               <Image
                 src={mainBanner.image_url}
                 alt={mainBanner.title || "Main Banner"}
                 fill
-                className="object-cover"
+                className="object-cover object-center"
               />
             ) : (
               <Image
                 src="/images/home/main_banner.png"
                 alt="Main Banner"
                 fill
-                className="object-cover"
+                className="object-cover object-center"
               />
             )}
           </div>
 
           {/* Banner Text - 로그인 여부에 따른 개인화 */}
-          <div className="absolute left-6 top-1/3 z-10">
+          {/* <div className="absolute left-6 top-1/3 z-10">
             <AuthAware
               fallback={
                 <div
@@ -170,7 +170,7 @@ export default function HomePage() {
                 {user?.name}님,<br />오늘도 칼갈이<br />어떠세요?
               </div>
             </AuthAware>
-          </div>
+          </div> */}
 
           {/* CTA Button - 인증 상태에 따른 텍스트 변경 */}
           <Button
@@ -218,7 +218,7 @@ export default function HomePage() {
           {eventBanner ? (
             <button
               onClick={handleEvent}
-              className="w-full aspect-[33/12] rounded-3xl shadow-md relative overflow-hidden hover:scale-[1.02] transition-transform"
+              className="w-full h-[120px] rounded-3xl shadow-md relative overflow-hidden hover:scale-[1.02] transition-transform"
             >
               <Image
                 src={eventBanner.image_url}

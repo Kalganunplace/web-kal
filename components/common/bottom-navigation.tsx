@@ -102,17 +102,27 @@ export default function BottomNavigation({ hasNotification = false }: BottomNavi
                     />
                   ) : null}
                 </div>
-                <span
-                  className={`text-[11px] font-normal leading-tight text-center mt-1.5 ${
-                    isActive ? "text-[#E67E22]" : "text-[#767676]"
-                  }`}
-                  style={{
-                    fontFamily: "var(--font-nanum-gothic, NanumGothic)",
-                    ...(item.label === "이용내역" ? { width: "48px" } : {})
-                  }}
-                >
-                  {item.label}
-                </span>
+
+                {/* 선택된 탭: 언더라인 / 선택 안된 탭: 텍스트 */}
+                {isActive ? (
+                  <div
+                    className="absolute bottom-0 bg-[#E67E22] rounded-full"
+                    style={{
+                      width: "24px",
+                      height: "3px"
+                    }}
+                  />
+                ) : (
+                  <span
+                    className="text-[11px] font-normal leading-tight text-center mt-1.5 text-[#767676]"
+                    style={{
+                      fontFamily: "var(--font-nanum-gothic, NanumGothic)",
+                      ...(item.label === "이용내역" ? { width: "48px" } : {})
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                )}
               </button>
             )
           })}
