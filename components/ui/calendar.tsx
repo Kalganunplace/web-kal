@@ -73,8 +73,8 @@ function Calendar({
         head_cell:
           "text-gray-500 font-normal text-sm flex-1 h-10 flex items-center justify-center",
         row: "flex w-full mt-2",
-        cell: "flex-1 text-center p-0 relative",
-        day: "absolute inset-0 m-auto aspect-square max-w-[40px] max-h-[40px] text-sm font-normal hover:bg-gray-100 rounded-full inline-flex items-center justify-center",
+        cell: "flex-1 text-center p-0 relative h-10",
+        day: "absolute inset-0 m-auto w-9 h-9 text-sm font-normal hover:bg-gray-100 rounded-full inline-flex items-center justify-center",
         day_range_end: "day-range-end",
         day_selected:
           "bg-orange-500 text-white hover:bg-orange-600",
