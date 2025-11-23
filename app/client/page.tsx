@@ -1,19 +1,18 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { CircleWonIcon, PlusIcon } from "@/components/ui/icon"
-import { BodySmall, CaptionSmall } from "@/components/ui/typography"
-import { useAuthAware } from "@/hooks/use-auth-aware"
+import { AccountSwitchModal } from "@/components/auth/account-switch-modal"
 import { AuthAware } from "@/components/auth/auth-aware"
 import { LoginBottomSheet } from "@/components/auth/login-prompt"
-import { useAuthHydration } from "@/hooks/use-auth-hydration"
-import { AccountSwitchModal } from "@/components/auth/account-switch-modal"
-import { useAuth } from "@/stores/auth-store"
 import BottomSheet from "@/components/ui/bottom-sheet"
+import { Button } from "@/components/ui/button"
+import { PlusIcon } from "@/components/ui/icon"
+import { BodySmall, CaptionSmall } from "@/components/ui/typography"
+import { useAuthAware } from "@/hooks/use-auth-aware"
+import { useAuthHydration } from "@/hooks/use-auth-hydration"
+import { useAuth } from "@/stores/auth-store"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
-
+import { useEffect, useState } from "react"
 interface Banner {
   id: string;
   position: string;
@@ -123,8 +122,8 @@ export default function HomePage() {
             <Image
               src="/svg/logo.svg"
               alt="Main Banner"
-              width={100}
-              height={100}
+              width={110}
+              height={29}
               className="object-cover mt-10"
             />
 
@@ -193,24 +192,22 @@ export default function HomePage() {
           {/* Price List Button */}
           <button
             onClick={handlePriceList}
-            className="flex-1 h-16 bg-[#F2F2F2] rounded-xl shadow-lg flex justify-between items-center px-5"
+            className="flex-1 w-[160px] h-[60px] bg-[#F2F2F2] rounded-xl shadow-lg flex justify-between items-center px-5"
           >
             <BodySmall color="#333333">가격표</BodySmall>
             <div className="w-6 h-6">
-              <CircleWonIcon size={24} color="#E67E22" />
+              <img src="/svg/won.svg" alt="" />
             </div>
           </button>
 
           {/* Guide Button */}
           <button
             onClick={handleGuide}
-            className="flex-1 h-16 bg-[#F2F2F2] rounded-xl shadow-lg flex justify-between items-center px-5"
+            className="flex-1 w-[160px] h-[60px] bg-[#F2F2F2] rounded-xl shadow-lg flex justify-between items-center px-5"
           >
             <BodySmall color="#333333">가이드</BodySmall>
             <div className="w-6 h-6">
-              <div className="w-6 h-6 border-2 border-[#E67E22] rounded-full flex items-center justify-center">
-                <span className="text-[#E67E22] text-xs font-bold">i</span>
-              </div>
+              <img src="/svg/Information.svg" alt="" />
             </div>
           </button>
         </div>
@@ -291,46 +288,7 @@ export default function HomePage() {
           )}
 
           {/* Subscription Banner */}
-          {subscriptionBanner ? (
-            <button
-              onClick={handleSubscription}
-              className="w-full aspect-[33/12] rounded-3xl shadow-md relative overflow-hidden hover:scale-[1.02] transition-transform"
-            >
-              <Image
-                src={subscriptionBanner.image_url}
-                alt={subscriptionBanner.title || "Subscription Banner"}
-                fill
-                className="object-cover"
-              />
-            </button>
-          ) : (
-            <button
-              onClick={handleSubscription}
-              className="w-full aspect-[33/12] bg-[#FAF3E0] rounded-3xl shadow-md relative overflow-hidden hover:scale-[1.02] transition-transform"
-            >
-              {/* Background decorative elements */}
-              <div className="absolute top-3/4 right-1/4 w-8 h-1 bg-black/40 rounded-full blur-sm" />
-              <div className="absolute top-4/5 right-1/5 w-8 h-1 bg-black/40 rounded-full blur-sm" />
 
-              {/* Main content */}
-              <div className="absolute left-6 top-1/4 flex justify-center items-center">
-                <div
-                  className="text-[#333333]"
-                  style={{ fontFamily: 'Do Hyeon', fontSize: '24px', fontWeight: 400, lineHeight: '1.25em', textShadow: '0px 3px 3px rgba(0,0,0,0.2)' }}
-                >
-                  이제 칼갈이도<br />구독으로!
-                </div>
-              </div>
-
-
-              {/* Indicators */}
-              <div className="absolute left-1/6 bottom-4 flex items-center gap-1">
-                <div className="w-1.5 h-1.5 bg-[#B0B0B0] rounded-full" />
-                <div className="w-1.5 h-1.5 bg-[#767676] rounded-full" />
-                <div className="w-1.5 h-1.5 bg-[#B0B0B0] rounded-full" />
-              </div>
-            </button>
-          )}
         </div>
 
         {/* Spacer for bottom navigation */}

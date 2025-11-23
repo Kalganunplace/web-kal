@@ -38,6 +38,12 @@ const nextConfig = {
       }
     }
 
+    // SVGR 설정
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ["@svgr/webpack"],
+    });
+
     return config
   },
 }

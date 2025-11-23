@@ -1,0 +1,22 @@
+import { SVGProps } from 'react'
+
+export function PriceIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      width="100"
+      height="100"
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path
+        d="M9.99756 10.0015V90.0014H89.9976M29.9976 60.002L47.4976 42.502L59.9976 55.002L87.4976 27.502M68.7881 25.0015H90.0013V46.2147"
+        stroke="currentColor"
+        strokeWidth="8.33333"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
