@@ -1,18 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import TopBanner from "@/components/ui/top-banner"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { AlertTriangle } from "lucide-react"
 import { BodyMedium, CaptionMedium, Heading3 } from "@/components/ui/typography"
+import { AlertTriangle } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 // import AddressSearchBottomSheet from "@/components/common/address-search-bottom-sheet"
 import DaumAddressSearchBottomSheet from "@/components/common/daum-address-search-bottom-sheet"
-import { isDaeguAddress } from "@/lib/kakao-address"
+import MapPinIcon from "@/components/icons/map-pin-icon"
 import type { AddressData } from "@/hooks/useAddressSearch"
 import { addressService, type Address, type CreateAddressData } from "@/lib/address-service"
-import { useAuthUser, useAuthHydrated } from "@/stores/auth-store"
+import { isDaeguAddress } from "@/lib/kakao-address"
+import { useAuthHydrated, useAuthUser } from "@/stores/auth-store"
 
 export default function AddressSettingsPage() {
   const router = useRouter()
@@ -52,7 +53,7 @@ export default function AddressSettingsPage() {
 
   const loadAddresses = async () => {
     if (!user?.id) return
-    
+
     try {
       setIsLoadingAddresses(true)
       const userAddresses = await addressService.getUserAddresses(user.id)
@@ -66,7 +67,7 @@ export default function AddressSettingsPage() {
 
   const handleAddressSelect = async (addressData: AddressData) => {
     if (!user?.id) return
-    
+
     const isSupported = isDaeguAddress(addressData.address)
 
     if (!isSupported) {
@@ -75,7 +76,7 @@ export default function AddressSettingsPage() {
     }
 
     setLoading(true)
-    
+
     try {
       const createData: CreateAddressData = {
         address_name: addressData.name,
@@ -113,7 +114,7 @@ export default function AddressSettingsPage() {
 
   const handleSetDefault = async (id: string) => {
     if (!user?.id) return
-    
+
     try {
       setLoading(true)
       await addressService.setDefaultAddress(id, user.id)
@@ -151,9 +152,6 @@ export default function AddressSettingsPage() {
             <div className="space-y-3">
               {isLoadingAddresses ? (
                 <div className="bg-white rounded-xl p-8 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    ⏳
-                  </div>
                   <BodyMedium color="#666666">주소를 불러오는 중...</BodyMedium>
                 </div>
               ) : (
@@ -184,7 +182,7 @@ export default function AddressSettingsPage() {
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="flex gap-2">
                       {!address.is_default && (
                         <Button
@@ -213,8 +211,8 @@ export default function AddressSettingsPage() {
 
               {addresses.length === 0 && !isLoadingAddresses && (
                 <div className="bg-white rounded-xl p-8 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    📍
+                  <div className="flex items-center justify-center mb-4 pl-7">
+                    <MapPinIcon size={64} />
                   </div>
                   <BodyMedium color="#666666">등록된 주소가 없습니다</BodyMedium>
                 </div>
@@ -223,18 +221,13 @@ export default function AddressSettingsPage() {
           </div>
 
           {/* 서비스 지원 지역 안내 */}
-          <div className="bg-blue-50 rounded-xl p-4">
-            <Heading3 color="#4A90E2" className="font-bold mb-2">서비스 지원 지역</Heading3>
+          <div className="bg-[#F2F2F2] rounded-2xl p-4 ">
+            <Heading3 color="#767676" className="font-bold mb-2">서비스 지원 지역</Heading3>
+            <CaptionMedium color="#767676">• 대구광역시 전 지역</CaptionMedium>
             <div className="space-y-1">
-              <CaptionMedium color="#4A90E2">• 대구광역시 전 지역</CaptionMedium>
-              <CaptionMedium color="#4A90E2">• 중구, 동구, 서구, 남구, 북구</CaptionMedium>
-              <CaptionMedium color="#4A90E2">• 수성구, 달서구, 달성군</CaptionMedium>
+              <CaptionMedium color="#767676">• 중구, 동구, 서구, 남구, 북구</CaptionMedium>
             </div>
-            <div className="mt-3 pt-3 border-t border-blue-200">
-              <CaptionMedium color="#4A90E2" className="text-xs">
-                * Google Places API를 통한 실시간 주소 검색 지원
-              </CaptionMedium>
-            </div>
+              <CaptionMedium color="#767676">• 수성구, 달서구, 달성군</CaptionMedium>
           </div>
         </div>
 
@@ -272,7 +265,7 @@ export default function AddressSettingsPage() {
               서비스 지원 지역이 아니에요
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="py-4 text-center space-y-3">
             <p className="text-gray-600">
               현재 선택하신 지역은 아직 서비스를 제공하지 않습니다.
