@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium } from "@/components/ui/typography"
 import { format } from "date-fns"
-import { Minus, Plus } from "lucide-react"
+import { ChevronDown, Minus, Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -277,20 +277,17 @@ export default function KnifeRequest({
 
           <button
             onClick={handleToggleDropdown}
-            className="w-full flex items-center justify-between p-4 border-2 border-[#E67E22] rounded-lg bg-white"
+            className={`w-full flex items-center justify-between h-12 p-4 border-2 rounded-lg bg-white transition-colors ${
+              showKnifeDropdown ? 'border-[#E67E22]' : 'border-gray-300'
+            }`}
           >
             <div className="flex items-center gap-2">
               <img src="/svg/Icon_knife.svg" alt="Knife" width={20} height={20} />
               <span className="font-medium text-gray-800">칼 추가하기</span>
             </div>
-            <svg
-              className={`w-5 h-5 text-gray-400 transition-transform ${showKnifeDropdown ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            <ChevronDown className={`w-5 h-5 transition-all ${
+              showKnifeDropdown ? 'text-orange-600 rotate-180' : 'text-gray-400'
+            }`} />
           </button>
 
           {/* 드롭다운 칼 종류 목록 */}
@@ -384,7 +381,7 @@ export default function KnifeRequest({
         {/* 바로 신청 버튼 */}
         {showSubmitButton && (
           <Button
-            className="w-full bg-[#E67E22] hover:bg-[#D35400] text-white rounded-xl py-4 font-bold text-lg disabled:bg-gray-300"
+            className="w-full h-14 bg-[#E67E22] hover:bg-[#D35400] text-white rounded-xl py-4 font-bold text-lg disabled:bg-gray-300"
             onClick={handleSubmit}
             disabled={!selectedDate || totalQuantity === 0}
           >

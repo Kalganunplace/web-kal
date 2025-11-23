@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
-import { ChevronDown, ChevronLeft } from "lucide-react"
+import { ko } from "date-fns/locale"
+import { ChevronDown } from "lucide-react"
 import Image from "next/image"
 import { useState } from "react"
 
@@ -25,23 +26,21 @@ export function DatePicker({
   const [tempSelectedDate, setTempSelectedDate] = useState<Date | undefined>(selectedDate)
 
   const formatDate = (date: Date) => {
+    // 오늘 날짜인지 확인
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const compareDate = new Date(date)
+    compareDate.setHours(0, 0, 0, 0)
+
+    if (compareDate.getTime() === today.getTime()) {
+      return '오늘'
+    }
+
     return date.toLocaleDateString('ko-KR', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
     }).replace(/\. /g, '.').replace(/\.$/, '')
-  }
-
-  const handlePrevMonth = () => {
-    const currentDate = tempSelectedDate || selectedDate || new Date()
-    const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-    setTempSelectedDate(prevMonth)
-  }
-
-  const handleNextMonth = () => {
-    const currentDate = tempSelectedDate || selectedDate || new Date()
-    const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
-    setTempSelectedDate(nextMonth)
   }
 
   // 임시 날짜 선택 (드롭다운은 닫지 않음)
@@ -72,8 +71,12 @@ export function DatePicker({
       <button
         onClick={() => !disabled && handleOpenPicker()}
         disabled={disabled}
-        className={`w-full bg-white border border-orange-300 rounded-lg h-12 px-4 flex items-center justify-between text-left transition-colors ${
-          disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-orange-400'
+        className={`w-full bg-white border-2 rounded-lg h-12 px-4 flex items-center justify-between text-left transition-colors ${
+          showDatePicker
+            ? 'border-orange-500'
+            : disabled
+              ? 'border-gray-300 opacity-50 cursor-not-allowed'
+              : 'border-gray-300 '
         }`}
       >
         <div className="flex items-center gap-2">
@@ -87,8 +90,8 @@ export function DatePicker({
             {selectedDate ? formatDate(selectedDate) : placeholder}
           </span>
         </div>
-        <ChevronDown className={`w-5 h-5 text-orange-600 transition-transform ${
-          showDatePicker ? 'rotate-180' : ''
+        <ChevronDown className={`w-5 h-5 transition-all ${
+          showDatePicker ? 'text-orange-600 rotate-180' : 'text-gray-400'
         }`} />
       </button>
 
@@ -102,33 +105,19 @@ export function DatePicker({
 
           {/* 캘린더 팝업 */}
           <div className="absolute top-full mt-2 left-0 right-0 z-50 bg-white border border-gray-200 rounded-lg p-4 shadow-lg">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">
-                {tempSelectedDate ?
-                  `${tempSelectedDate.getFullYear()}년 ${tempSelectedDate.getMonth() + 1}월` :
-                  `${new Date().getFullYear()}년 ${new Date().getMonth() + 1}월`
-                }
-              </h3>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrevMonth}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={handleNextMonth}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <ChevronLeft className="w-4 h-4 rotate-180" />
-                </button>
-              </div>
-            </div>
-
             <Calendar
               mode="single"
               selected={tempSelectedDate}
               onSelect={handleDateSelect}
+              month={tempSelectedDate || selectedDate}
+              onMonthChange={setTempSelectedDate}
+              locale={ko}
+              formatters={{
+                formatWeekdayName: (date: Date) => {
+                  const days = ['일', '월', '화', '수', '목', '금', '토']
+                  return days[date.getDay()]
+                }
+              }}
               disabled={(date) => {
                 // 과거 날짜 선택 불가
                 const dateWithoutTime = new Date(date)
@@ -151,7 +140,7 @@ export function DatePicker({
             <div className="mt-4">
               <Button
                 onClick={handleConfirmDate}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                className="w-full h-[56px] bg-orange-500 hover:bg-orange-600 text-white"
                 disabled={!tempSelectedDate}
               >
                 날짜 선택
