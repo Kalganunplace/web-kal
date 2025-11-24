@@ -2,11 +2,11 @@
 
 import { Button } from '@/components/ui/button'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
 } from "@/components/ui/sheet"
 import { BodyMedium, Heading2 } from '@/components/ui/typography'
 import { useAuthHydration } from '@/hooks/use-auth-hydration'
@@ -56,7 +56,7 @@ export function LoginPrompt({
       <div className="flex flex-col w-full max-w-xs gap-3">
         <Button
           onClick={handleLogin}
-          className="w-full h-12 bg-[#E67E22] hover:bg-[#D35400] text-white font-bold rounded-xl"
+          className="w-full h-12 bg-[#E67E22]  text-white font-bold rounded-xl"
         >
           {actionText}
         </Button>
@@ -156,7 +156,7 @@ export function LoginBottomSheet({
           <div className="flex flex-col gap-3 pt-4">
             <Button
               onClick={onClose}
-              className="w-full h-12 bg-[#E67E22] hover:bg-[#D35400] text-white font-bold rounded-xl"
+              className="w-full h-12 bg-[#E67E22]  text-white font-bold rounded-xl"
             >
               확인
             </Button>
@@ -185,7 +185,7 @@ export function LoginBottomSheet({
         <div className="flex flex-col gap-3 pt-4">
           <Button
             onClick={handleLogin}
-            className="w-full h-12 bg-[#E67E22] hover:bg-[#D35400] text-white font-bold rounded-xl"
+            className="w-full h-12 bg-[#E67E22]  text-white font-bold rounded-xl"
           >
             {actionText || "로그인하기"}
           </Button>

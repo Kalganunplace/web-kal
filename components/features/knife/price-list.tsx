@@ -336,7 +336,7 @@ export default function PriceList() {
 
             {/* 바로 신청 버튼 */}
             {/* <Button
-              className="w-full bg-[#E67E22] hover:bg-[#D35400] text-white rounded-lg py-3 font-bold mt-6"
+              className="w-full bg-[#E67E22]  text-white rounded-lg py-3 font-bold mt-6"
               onClick={() => {
                 handleCloseBottomSheet()
                 router.push('/client/knife-request')

@@ -407,7 +407,7 @@ export default function PaymentConfirmation() {
                   className={`flex-1 h-12 rounded-lg text-sm font-bold transition-colors ${
                     !tempDate
                       ? 'bg-gray-400 text-white cursor-not-allowed'
-                      : 'bg-[#E67E22] hover:bg-[#D35400] text-white'
+                      : 'bg-[#E67E22]  text-white'
                   }`}
                 >
                   확인
@@ -543,7 +543,7 @@ export default function PaymentConfirmation() {
         {/* 결제하기 버튼 */}
         <div className="flex justify-center items-center px-5">
           <Button
-            className="w-full h-14 bg-[#E67E22] hover:bg-[#D35400] text-white rounded-lg font-bold text-lg disabled:bg-[#B0B0B0] disabled:text-white"
+            className="w-full h-14 bg-[#E67E22]  text-white rounded-lg font-bold text-lg disabled:bg-[#B0B0B0] disabled:text-white"
             onClick={handlePayment}
             disabled={!selectedAddress}
           >

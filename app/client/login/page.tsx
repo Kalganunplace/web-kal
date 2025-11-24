@@ -3,11 +3,11 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { CaptionMedium } from "@/components/ui/typography"
 import TopBanner from "@/components/ui/top-banner"
+import { CaptionMedium } from "@/components/ui/typography"
+import { useAuthHydration } from "@/hooks/use-auth-hydration"
 import { supabase } from "@/lib/auth/supabase"
 import { useAuth } from "@/stores/auth-store"
-import { useAuthHydration } from "@/hooks/use-auth-hydration"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -25,7 +25,7 @@ export default function LoginPage() {
   const [timer, setTimer] = useState(180) // 3분
   const [canResend, setCanResend] = useState(false)
   const [devCode, setDevCode] = useState<string | null>(null) // 개발용 인증코드 표시
-  
+
   // URL에서 redirect 파라미터 가져오기 (LoginPrompt와 일관성 유지)
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
   const returnUrl = searchParams?.get('redirect') || searchParams?.get('returnUrl') || '/'
@@ -117,7 +117,7 @@ export default function LoginPage() {
         setStep("verification")
         setTimer(180)
         setCanResend(false)
-        
+
         // 개발 환경에서는 DB에서 인증코드 가져와서 표시
         if (process.env.NODE_ENV === 'development') {
           try {
@@ -126,7 +126,7 @@ export default function LoginPage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ phone })
             }).then(res => res.json())
-            
+
             if (data?.code) {
               setDevCode(data.code)
             }
@@ -154,6 +154,22 @@ export default function LoginPage() {
     setError("")
 
     try {
+      // 1단계: 인증번호 검증
+      const verifyResponse = await fetch('/api/auth/client/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, code: verificationCode })
+      })
+
+      const verifyData = await verifyResponse.json()
+
+      if (!verifyData.success) {
+        setError(verifyData.error || "잘못된 인증번호입니다.")
+        setLoading(false)
+        return
+      }
+
+      // 2단계: 로그인
       const result = await signInClient(phone, verificationCode)
 
       if (result.success) {
@@ -256,7 +272,7 @@ export default function LoginPage() {
                 <Button
                   onClick={handleSendVerification}
                   disabled={loading || !phone.trim()}
-                  className="w-full h-12 text-lg bg-[#E67E22] hover:bg-[#D35400]"
+                  className="w-full h-12 text-lg bg-[#E67E22] "
                 >
                   {loading ? "처리 중..." : "인증번호 발송"}
                 </Button>
@@ -325,7 +341,7 @@ export default function LoginPage() {
                   </button>
                 </div>
               )}
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">인증번호</label>
                 <Input
@@ -370,7 +386,7 @@ export default function LoginPage() {
               <Button
                 onClick={handleVerifyAndLogin}
                 disabled={loading || !verificationCode.trim() || verificationCode.length !== 6}
-                className="w-full h-12 text-lg bg-[#E67E22] hover:bg-[#D35400]"
+                className="w-full h-12 text-lg bg-[#E67E22] "
               >
                 {loading ? "처리 중..." : "로그인"}
               </Button>

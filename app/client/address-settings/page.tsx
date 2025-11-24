@@ -285,7 +285,7 @@ export default function AddressSettingsPage() {
             </Button>
             <Button
               onClick={() => setShowUnsupportedModal(false)}
-              className="flex-1 h-12 bg-[#E67E22] hover:bg-[#D35400] text-white rounded-lg"
+              className="flex-1 h-12 bg-[#E67E22] text-white rounded-lg"
             >
               확인
             </Button>

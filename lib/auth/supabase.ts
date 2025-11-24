@@ -141,6 +141,7 @@ class SupabaseAuthClient {
     try {
       // 데이터베이스 함수를 통해 인증번호 생성
       const client = await getSupabaseClient()
+      console.log('[sendVerificationCode] Calling generate_verification_code RPC with phone:', formattedPhone)
       const { data, error } = await client.rpc('generate_verification_code', {
         p_phone: formattedPhone,
         p_type: 'phone_verification'
@@ -148,8 +149,11 @@ class SupabaseAuthClient {
 
       if (error) {
         console.error('인증번호 생성 오류:', error)
-        return { success: false, error: '인증번호 생성에 실패했습니다.' }
+        console.error('Error details:', JSON.stringify(error, null, 2))
+        return { success: false, error: `인증번호 생성에 실패했습니다: ${error.message || JSON.stringify(error)}` }
       }
+
+      console.log('[sendVerificationCode] Verification code generated successfully:', data)
 
       // SMS 서비스를 통해 발송
       const { SMSService } = await import('@/lib/sms/sms-service')
@@ -248,11 +252,10 @@ class SupabaseAuthClient {
   async signIn(phone: string, verificationCode: string): Promise<AuthResponse> {
     const formattedPhone = this.formatPhone(phone)
 
-    // 인증번호 검증
-    const verification = await this.verifyCode(formattedPhone, verificationCode)
-    if (!verification.success) {
-      return { success: false, error: verification.error }
-    }
+    // 📌 인증번호 검증
+    // verify_code 함수는 한 번 호출되면 used=TRUE로 설정하므로,
+    // 이 함수에서 검증하지 않고 이미 검증된 것으로 가정합니다.
+    // 검증은 로그인 전 단계에서 수행되어야 합니다.
 
     try {
       // 사용자 조회

@@ -381,7 +381,7 @@ export default function KnifeRequest({
         {/* 바로 신청 버튼 */}
         {showSubmitButton && (
           <Button
-            className="w-full h-14 bg-[#E67E22] hover:bg-[#D35400] text-white rounded-xl py-4 font-bold text-lg disabled:bg-gray-300"
+            className="w-full h-14 bg-[#E67E22]  text-white rounded-xl py-4 font-bold text-lg disabled:bg-gray-300"
             onClick={handleSubmit}
             disabled={!selectedDate || totalQuantity === 0}
           >

@@ -1,15 +1,15 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import BottomSheet from "@/components/ui/bottom-sheet"
-import { AlertTriangle, MapPin, Search, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { BodyMedium, BodySmall } from "@/components/ui/typography"
-import { useState } from "react"
-import { getKakaoAddressService, isDaeguAddress } from "@/lib/kakao-address"
 import type { AddressResult } from "@/lib/kakao-address"
+import { getKakaoAddressService, isDaeguAddress } from "@/lib/kakao-address"
+import { AlertTriangle, Loader2, MapPin, Search } from "lucide-react"
+import { useState } from "react"
 
 export interface AddressData {
   name: string
@@ -270,7 +270,7 @@ export function AddressSearchBottomSheet({
                 className={`flex-1 h-12 rounded-lg text-sm font-bold transition-colors ${
                   !selectedAddress.address || !selectedAddress.name || addressError
                     ? "bg-gray-400 text-white cursor-not-allowed"
-                    : "bg-[#E67E22] hover:bg-[#D35400] text-white"
+                    : "bg-[#E67E22]  text-white"
                 }`}
                 disabled={!selectedAddress.address || !selectedAddress.name || !!addressError}
               >

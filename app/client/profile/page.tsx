@@ -134,7 +134,7 @@ export default function ProfilePage() {
             </div>
             <button
               onClick={() => setShowLoginSheet(true)}
-              className="w-full h-12 bg-[#E67E22] hover:bg-[#D35400] text-white font-bold rounded-lg transition-colors"
+              className="w-full h-12 bg-[#E67E22]  text-white font-bold rounded-lg transition-colors"
             >
               로그인하기
             </button>
