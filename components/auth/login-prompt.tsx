@@ -180,9 +180,8 @@ export function LoginBottomSheet({
             <Icon04 size={70} color="#E67E22"/>
           </div>
           <SheetDescription className="text-[#333] text-base font-bold">
-            {/* {message || "이 기능을 사용하려면 로그인이 필요합니다."} */}
-            <p>간편하게 로그인하고</p>
-            <p>칼가는곳의 다양한 서비스를 이용해보세요!</p>
+            간편하게 로그인하고<br />
+            칼가는곳의 다양한 서비스를 이용해보세요!
           </SheetDescription>
         </SheetHeader>
 
