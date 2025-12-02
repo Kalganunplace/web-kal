@@ -3,7 +3,7 @@
 import BottomSheet from "@/components/ui/bottom-sheet"
 import { ChevronDownIcon, ChevronRightIcon } from "@/components/ui/icon"
 import TopBanner from "@/components/ui/top-banner"
-import { BodyMedium, BodySmall, BodyXSmall, CaptionLarge, Heading3 } from "@/components/ui/typography"
+import { BodyMedium, BodySmall, BodyXSmall, Heading3 } from "@/components/ui/typography"
 import { useUserBookings } from '@/hooks/queries/use-booking'
 import { createClient } from '@/lib/auth/supabase'
 import { type Booking } from '@/lib/booking-service'
@@ -11,7 +11,7 @@ import { paymentService } from '@/lib/payment-service'
 import { useIsAuthenticated } from '@/stores/auth-store'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
-import { ko } from 'date-fns/locale'
+import { Divide } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
@@ -220,7 +220,13 @@ export default function UsageHistoryPage() {
 
   // 예약 데이터를 히스토리 아이템으로 변환
   const formatBookingDate = (booking: Booking) => {
-    return format(new Date(booking.booking_date), 'M월 d일', { locale: ko })
+    return format(new Date(booking.booking_date), 'yyyy.MM.dd')
+  }
+
+  // 상세 페이지용 날짜 + 시간 형식
+  const formatBookingDateTime = (booking: Booking) => {
+    const date = format(new Date(booking.booking_date), 'yyyy.MM.dd')
+    return `${date}.${booking.booking_time?.replace(':', ':') || '00:00'}`
   }
 
   const formatBookingItems = (booking: Booking) => {
@@ -265,7 +271,6 @@ export default function UsageHistoryPage() {
 
     // 할인 및 세금 계산
     const discountAmount = usedCoupon?.discount_amount || 0
-    const originalAmount = usedCoupon?.original_order_amount || selectedItem.total_amount
     const finalAmount = selectedItem.total_amount
     const taxAmount = Math.floor(finalAmount * 0.1) // 10% 부가세
 
@@ -276,99 +281,87 @@ export default function UsageHistoryPage() {
           onBackClick={handleCloseDetailView}
         />
 
-        <div className="flex flex-col items-center gap-5 px-5">
+        <div className="flex flex-col gap-5 px-5">
           {/* Date Header */}
           <div className="w-full mt-5">
-            <div className="flex items-center">
-              <BodyMedium color="#333333">{formatBookingDate(selectedItem)}</BodyMedium>
-            </div>
+            <BodyMedium color="#333333">{formatBookingDate(selectedItem)}</BodyMedium>
           </div>
 
           {/* Receipt Card */}
-          <div className="w-full bg-white rounded-[15px] shadow-[0px_5px_30px_0px_rgba(0,0,0,0.1)] py-[30px]">
-            <div className="flex flex-col">
-              {/* Receipt Header */}
-              <div className="flex flex-col items-center gap-2 px-[30px] pb-[20px]">
-                <div className="text-2xl">🧾</div>
+          <div className="w-full bg-white rounded-[15px] shadow-[0px_5px_30px_0px_rgba(0,0,0,0.1)] py-6 px-5">
+            {/* Receipt Header */}
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex items-center gap-2">
+                <img src="/icons/icon_receipt.png" alt="" className="w-5 h-5" />
                 <BodyMedium color="#333333">영수증</BodyMedium>
-                <BodyMedium color="#E67E22" className="text-xl font-bold">
-                  {selectedItem.total_amount.toLocaleString()}원
-                </BodyMedium>
               </div>
+              <BodyMedium color="#E67E22" className="font-bold">
+                합계: {selectedItem.total_amount.toLocaleString()}원
+              </BodyMedium>
+            </div>
+            <Divide className="w-full h-[2px] bg-[#E67E22] mb-5" />
 
-              {/* Orange Divider */}
-              <div className="w-full h-[2px] bg-[#E67E22] mb-[20px]" />
+            {/* Order Info */}
+            <div className="space-y-3 mb-5">
+              <div className="flex justify-between">
+                <BodySmall color="#767676">주문 번호</BodySmall>
+                <BodySmall color="#333333">{selectedItem.id.slice(0, 8).toUpperCase()}</BodySmall>
+              </div>
+              <div className="flex justify-between">
+                <BodySmall color="#767676">시간</BodySmall>
+                <BodySmall color="#333333">{formatBookingDateTime(selectedItem)}</BodySmall>
+              </div>
+            </div>
 
-              {/* Order Details */}
-              <div className="px-[30px] space-y-4">
-                {/* Order Info */}
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <CaptionLarge color="#767676">주문번호</CaptionLarge>
-                    <CaptionLarge color="#333333">{selectedItem.id.slice(0, 8).toUpperCase()}</CaptionLarge>
+            {/* Order Items Section */}
+            <div className="mb-5">
+              <BodySmall color="#E67E22" className="font-bold mb-3">일반 주문</BodySmall>
+              <div className="space-y-2">
+                {selectedItem.booking_items?.map((item, index) => (
+                  <div key={index} className="flex justify-between items-start">
+                    <div>
+                      <BodySmall color="#333333">{item.knife_type?.name || '일반 식도류'}</BodySmall>
+                      <BodyXSmall color="#767676">x {item.quantity}</BodyXSmall>
+                    </div>
+                    <BodySmall color="#333333">{item.total_price.toLocaleString()}원</BodySmall>
                   </div>
-                  <div className="flex justify-between">
-                    <CaptionLarge color="#767676">주문시간</CaptionLarge>
-                    <CaptionLarge color="#333333">{selectedItem.booking_time}</CaptionLarge>
+                )) || (
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <BodySmall color="#333333">일반 식도류</BodySmall>
+                      <BodyXSmall color="#767676">x {selectedItem.total_quantity}</BodyXSmall>
+                    </div>
+                    <BodySmall color="#333333">{selectedItem.total_amount.toLocaleString()}원</BodySmall>
                   </div>
+                )}
+              </div>
+            </div>
+
+            {/* Additional Info Section */}
+            <div>
+              <BodySmall color="#333333" className="font-bold mb-3">기타 정보</BodySmall>
+              <div className="space-y-2">
+                {/* 할인 정보 */}
+                <div className="flex justify-between">
+                  <BodySmall color="#767676">할인</BodySmall>
+                  <BodySmall color="#333333">
+                    {discountAmount > 0 ? `-${discountAmount.toLocaleString()}원` : '-'}
+                  </BodySmall>
                 </div>
-
-                {/* Order Type */}
-                <div className="bg-[#FFF9F0] rounded-[10px] p-3">
-                  <CaptionLarge color="#E67E22" className="font-bold">칼갈이 서비스</CaptionLarge>
-                </div>
-
-                {/* Order Items */}
-                <div className="space-y-2">
-                  <CaptionLarge color="#E67E22" className="font-bold">일반 주문</CaptionLarge>
-                  {selectedItem.booking_items?.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <CaptionLarge color="#333333">
-                        {item.knife_type?.name || '칼'} × {item.quantity}
-                      </CaptionLarge>
-                      <CaptionLarge color="#333333">{item.total_price.toLocaleString()}원</CaptionLarge>
-                    </div>
-                  )) || (
-                    <div className="flex justify-between items-center">
-                      <CaptionLarge color="#333333">칼갈이 × {selectedItem.total_quantity}</CaptionLarge>
-                      <CaptionLarge color="#333333">{selectedItem.total_amount.toLocaleString()}원</CaptionLarge>
-                    </div>
-                  )}
-                </div>
-
-                {/* White Divider */}
-                <div className="w-full h-[1px] bg-[#F0F0F0]" />
-
-                {/* Additional Info */}
-                <div className="bg-[#F8F8F8] rounded-[10px] p-3">
-                  <CaptionLarge color="#767676" className="font-bold mb-2">기타 정보</CaptionLarge>
-                  <div className="space-y-1">
-                    {/* 할인이 있는 경우에만 표시 */}
-                    {discountAmount > 0 && (
-                      <>
-                        <div className="flex justify-between">
-                          <CaptionLarge color="#767676">할인</CaptionLarge>
-                          <CaptionLarge color="#E67E22">-{discountAmount.toLocaleString()}원</CaptionLarge>
-                        </div>
-                        {usedCoupon?.coupon && (
-                          <div className="flex justify-between">
-                            <CaptionLarge color="#767676">{usedCoupon.coupon.name}</CaptionLarge>
-                            <CaptionLarge color="#333333"></CaptionLarge>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    <div className="flex justify-between">
-                      <CaptionLarge color="#767676">부가세</CaptionLarge>
-                      <CaptionLarge color="#333333">{taxAmount.toLocaleString()}원</CaptionLarge>
-                    </div>
-                    <div className="flex justify-between">
-                      <CaptionLarge color="#767676">결제 수단</CaptionLarge>
-                      <CaptionLarge color="#333333">
-                        {payment ? paymentService.getPaymentMethodText(payment.payment_method) : '무통장입금'}
-                      </CaptionLarge>
-                    </div>
+                {usedCoupon?.coupon_type && (
+                  <div>
+                    <BodyXSmall color="#767676">{usedCoupon.coupon_type.name}</BodyXSmall>
                   </div>
+                )}
+                <div className="flex justify-between">
+                  <BodySmall color="#767676">부가세</BodySmall>
+                  <BodySmall color="#333333">{taxAmount.toLocaleString()}원</BodySmall>
+                </div>
+                <div className="flex justify-between">
+                  <BodySmall color="#767676">결제 수단</BodySmall>
+                  <BodySmall color="#333333">
+                    {payment ? paymentService.getPaymentMethodText(payment.payment_method) : '-'}
+                  </BodySmall>
                 </div>
               </div>
             </div>
