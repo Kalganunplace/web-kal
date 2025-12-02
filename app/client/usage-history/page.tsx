@@ -3,7 +3,7 @@
 import BottomSheet from "@/components/ui/bottom-sheet"
 import { ChevronDownIcon, ChevronRightIcon } from "@/components/ui/icon"
 import TopBanner from "@/components/ui/top-banner"
-import { BodyMedium, BodySmall, CaptionLarge } from "@/components/ui/typography"
+import { BodyMedium, BodySmall, BodyXSmall, CaptionLarge, Heading3 } from "@/components/ui/typography"
 import { useUserBookings } from '@/hooks/queries/use-booking'
 import { createClient } from '@/lib/auth/supabase'
 import { type Booking } from '@/lib/booking-service'
@@ -165,46 +165,54 @@ export default function UsageHistoryPage() {
 
   // 상태별 표시 매핑
   const getStatusDisplay = (status: string) => {
-    const statusMap: Record<string, { text: string; icon: string; description: string }> = {
+    const statusMap: Record<string, { text: string; icon: string; description: string; summary?: string }> = {
       'pending': {
         text: '영수증',
         icon: '✏️',
-        description: '칼갈이 신청이 접수되었어요!\n이제 결제를 진행해 주시면 됩니다'
+        description: '칼갈이 신청이 접수되었어요!',
+        summary: '이제 결제를 진행해 주시면 됩니다'
       },
       'payment_pending': {
         text: '영수증',
         icon: '💳',
-        description: '결제 진행 중입니다\n결제해주시면 예약이 마무리 됩니다'
+        description: '결제 진행 중입니다',
+        summary: '결제해주시면 예약이 마무리 됩니다'
       },
       'confirmed': {
         text: '영수증',
         icon: '📅',
-        description: '방문 예약 확정 중입니다\n장인분과 일정을 조율 중이에요 :)'
+        description: '방문 예약 확정 중입니다',
+        summary: '장인분과 일정을 조율 중이에요 :)'
       },
       'ready_for_pickup': {
         text: '영수증',
         icon: '📦',
-        description: '칼을 준비해주세요!\n저희가 곧 픽업하러 갈게요'
+        description: '칼을 준비해주세요!',
+        summary: '저희가 곧 픽업하러 갈게요'
       },
       'in_progress': {
         text: '영수증',
         icon: '🔨',
-        description: '장인이 칼을 연마하고 있어요\n열심히도 달구시는 모습이 있어요'
+        description: '장인이 칼을 연마하고 있어요',
+        summary: '열심히도 달구시는 모습이 있어요'
       },
       'shipping': {
         text: '영수증',
         icon: '🚚',
-        description: '칼이 배송중입니다!\n날카롭게 다듬어진 칼이 빠르게 이동 중이에요 :)'
+        description: '칼이 배송중입니다!',
+        summary: '날카롭게 다듬어진 칼이 빠르게 이동 중이에요 :)'
       },
       'completed': {
         text: '영수증',
         icon: '✅',
-        description: '칼갈이 완료!\n날이 무뎌질때 바로 찾아 주세요!'
+        description: '칼갈이 완료!',
+        summary: '날이 무뎌질때 바로 찾아 주세요!'
       },
       'cancelled': {
         text: '영수증',
         icon: '❌',
-        description: '예약이 취소되었습니다'
+        description: '예약이 취소되었습니다',
+        summary: '예약이 취소되었습니다'
       }
     }
     return statusMap[status] || { text: '영수증', icon: '🔪', description: status }
@@ -523,15 +531,18 @@ export default function UsageHistoryPage() {
         {/* Current Service Section */}
         {hasCurrentService && currentService && (
           <div className="w-full ">
-            <div className="flex justify-between items-center gap-5 mb-5">
-              <BodyMedium color="#333333">현재 진행 중인 서비스</BodyMedium>
+            <div className="flex justify-between items-center gap-5 px-5 mb-5">
+              <Heading3 color="#333333">현재 진행 중인 서비스</Heading3>
             </div>
             <div className="bg-white  shadow-[0px_6px_12px_-6px_rgba(24,39,75,0.12),_0px_8px_24px_-4px_rgba(24,39,75,0.08)] p-6 flex flex-col items-center gap-3">
-              <div className="text-5xl">{getStatusDisplay(currentService.status).icon}</div>
+              <img src="/icons/icon_pen.png" alt="" className="w-9 h-9" />
               <div className="text-center">
                 <BodyMedium color="#333333" className="font-bold whitespace-pre-line">
                   {getStatusDisplay(currentService.status).description}
                 </BodyMedium>
+                <BodySmall color="#767676">
+                  {getStatusDisplay(currentService.status).description}
+                </BodySmall>
               </div>
             </div>
           </div>
@@ -539,17 +550,20 @@ export default function UsageHistoryPage() {
 
         {/* No Current Service */}
         {!hasCurrentService && (
-          <div className="w-full px-5">
-            <div className="flex justify-between items-center gap-5 mb-5">
-              <BodyMedium color="#333333">현재 진행 중인 서비스</BodyMedium>
+          <div className="w-full">
+            <div className="flex justify-between items-center gap-5 px-5 mb-5">
+              <Heading3 color="#333333">현재 진행 중인 서비스</Heading3>
             </div>
             <div className="bg-white rounded-[30px] shadow-[0px_6px_12px_-6px_rgba(24,39,75,0.12),_0px_8px_24px_-4px_rgba(24,39,75,0.08)] p-6 flex flex-col items-center gap-3">
-              <div className="text-5xl">✏️</div>
+              <img src="/icons/icon_pen.png" alt="" className="w-9 h-9" />
               <div className="text-center">
                 <BodyMedium color="#333333" className="font-bold whitespace-pre-line">
-                  현재 진행 중인 서비스가 없습니다{'\n'}
-                  칼갈이, 지금 바로 신청해보세요!
+                  현재 진행 중인 서비스가 없습니다
                 </BodyMedium>
+                <BodySmall color="#767676">
+                  칼갈이, 지금 바로 신청해보세요!
+                </BodySmall>
+
               </div>
               <button
                 onClick={() => router.push('/client/knife-request')}
@@ -649,14 +663,14 @@ export default function UsageHistoryPage() {
           </div>
 
           {/* Stats */}
-          <div className="flex justify-between items-center">
-            <div>
-              <BodySmall color="#767676">올해 연마 횟수</BodySmall>
-              <BodyMedium color="#333333">{yearlyStats.sharpening_count}회</BodyMedium>
+          <div className="flex flex-col items-start gap-2">
+            <div className="flex items-center gap-2">
+              <BodyXSmall color="#767676">올해 연마 횟수</BodyXSmall>
+              <BodySmall color="#333333">{yearlyStats.sharpening_count}회</BodySmall>
             </div>
-            <div className="text-right">
-              <BodySmall color="#767676">총 이용 금액</BodySmall>
-              <BodyMedium color="#E67E22">{yearlyStats.total_amount}</BodyMedium>
+            <div className="flex items-center gap-2">
+              <BodyXSmall color="#767676">총 이용 금액</BodyXSmall>
+              <BodySmall color="#E67E22">{yearlyStats.total_amount}</BodySmall>
             </div>
           </div>
         </div>
@@ -668,7 +682,7 @@ export default function UsageHistoryPage() {
               <div key={booking.id} className="space-y-3">
                 {/* Date Header */}
                 <div className="flex items-center">
-                  <BodyMedium color="#333333">{formatBookingDate(booking)}</BodyMedium>
+                  <BodyXSmall color="#333333">{formatBookingDate(booking)}</BodyXSmall>
                 </div>
 
                 {/* History Item */}
@@ -678,11 +692,11 @@ export default function UsageHistoryPage() {
                 >
                   <div className="text-xl">{getStatusDisplay(booking.status).icon}</div>
                   <div className="flex-1">
-                    <div className="flex justify-between items-start mb-1">
-                      <BodyMedium color="#333333">{booking.total_amount.toLocaleString()}원</BodyMedium>
+                    <div className="flex justify-between items-start">
+                      <BodySmall color="#333333">{booking.total_amount.toLocaleString()}원</BodySmall>
                       <ChevronRightIcon size={20} className="text-[#767676]" />
                     </div>
-                    <BodySmall color="#767676">{formatBookingItems(booking)}</BodySmall>
+                    <BodyXSmall color="#767676">{formatBookingItems(booking)}</BodyXSmall>
                   </div>
                 </div>
 
