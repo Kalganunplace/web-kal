@@ -8,7 +8,11 @@ import BottomSheet from "@/components/ui/bottom-sheet"
 import { Button } from "@/components/ui/button"
 import { BodyMedium, BodySmall, CaptionMedium, Heading3 } from "@/components/ui/typography"
 import { useAuthHydration } from "@/hooks/use-auth-hydration"
-import { AuthUser } from "@/lib/auth/supabase"
+
+interface MemberInfo {
+  name: string
+  phone: string
+}
 
 export default function MemberInfoPage() {
   const router = useRouter()
@@ -17,13 +21,33 @@ export default function MemberInfoPage() {
   const [isWithdrawBottomSheetOpen, setIsWithdrawBottomSheetOpen] = useState(false)
 
   // 회원 정보 상태
-  const [memberInfo, setMemberInfo] = useState<AuthUser | null>(null)
+  const [memberInfo, setMemberInfo] = useState<MemberInfo | null>(null)
 
-  // 사용자 정보 로드
+  // 사용자 프로필 정보 로드
   useEffect(() => {
-    if (user && !authLoading) {
-      setMemberInfo(user)
-      setDataLoading(false)
+    if (user && !authLoading && user.type === 'client') {
+      // API를 통해 프로필 조회
+      fetch('/api/user/profile', {
+        method: 'GET',
+        credentials: 'include'
+      })
+        .then(res => res.json())
+        .then(response => {
+          if (response.success && response.data) {
+            setMemberInfo({
+              name: response.data.name || '',
+              phone: response.data.phone || ''
+            })
+          } else {
+            console.error('프로필 조회 실패:', response.error)
+          }
+        })
+        .catch(error => {
+          console.error('프로필 조회 오류:', error)
+        })
+        .finally(() => {
+          setDataLoading(false)
+        })
     } else if (!authLoading && !user) {
       // 로그인하지 않은 경우 홈으로 리다이렉트
       router.push('/')

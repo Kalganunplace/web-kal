@@ -3,6 +3,7 @@
 import { AccountSwitchModal } from "@/components/auth/account-switch-modal"
 import { LoginBottomSheet } from "@/components/auth/login-prompt"
 import BottomNavigation from "@/components/common/bottom-navigation"
+import { Icon27 } from "@/components/icons"
 import { ChevronRightIcon } from "@/components/ui/icon"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, Typography } from "@/components/ui/typography"
@@ -165,9 +166,9 @@ export default function ProfilePage() {
       {/* 메인 콘텐츠 영역 */}
       <div className="px-5 py-6 space-y-5">
         {/* 사용자 정보 */}
-        <div className="text-center space-y-2">
+        <div className="text-left space-y-2">
           <Typography variant="h2" color="#333333" className="font-extrabold">
-            {user.name}님
+            {userProfile?.name || user.name || '회원'}님
           </Typography>
         </div>
 
@@ -273,15 +274,18 @@ export default function ProfilePage() {
 
         {/* 내 보유 쿠폰 버튼 - 쿠폰이 있을 때만 표시 */}
         {userProfile?.couponCount != null && userProfile.couponCount > 0 && (
-          <button
-            onClick={() => router.push("/client/coupons")}
-            className="w-full h-12 bg-[#E67E22] text-white font-bold rounded-md flex items-center justify-center space-x-1 shadow-sm"
-          >
-            <div className="w-6 h-6 text-white">🎫</div>
-            <span>
-              내 보유 쿠폰 ({userProfile.couponCount}개)
-            </span>
-          </button>
+          <div className="flex justify-center">
+            <button
+              onClick={() => router.push("/client/coupons")}
+              className="w-[calc(100%-3rem)] max-w-[280px] h-12 bg-[#E67E22] text-white font-bold rounded-[8px] flex items-center justify-center space-x-1 shadow-sm"
+            >
+              <Icon27 size={24} color="#FFFFFF"/>
+              <span>
+                내 보유 쿠폰
+                {/* ({userProfile.couponCount}개) */}
+              </span>
+            </button>
+          </div>
         )}
 
         {/* 메뉴 리스트 */}
