@@ -167,55 +167,55 @@ export default function UsageHistoryPage() {
   const getStatusDisplay = (status: string) => {
     const statusMap: Record<string, { text: string; icon: string; description: string; summary?: string }> = {
       'pending': {
-        text: '영수증',
-        icon: '✏️',
+        text: '신청중',
+        icon: '/icons/icon_pen.png',
         description: '칼갈이 신청이 접수되었어요!',
         summary: '이제 결제를 진행해 주시면 됩니다'
       },
       'payment_pending': {
-        text: '영수증',
-        icon: '💳',
+        text: '결제중',
+        icon: '/icons/Icon_Card.png',
         description: '결제 진행 중입니다',
         summary: '결제해주시면 예약이 마무리 됩니다'
       },
       'confirmed': {
-        text: '영수증',
-        icon: '📅',
+        text: '예약중',
+        icon: '/icons/Icon_Calendar.png',
         description: '방문 예약 확정 중입니다',
         summary: '장인분과 일정을 조율 중이에요 :)'
       },
       'ready_for_pickup': {
-        text: '영수증',
-        icon: '📦',
+        text: '픽업준비중',
+        icon: '/icons/Icon_Box.png',
         description: '칼을 준비해주세요!',
         summary: '저희가 곧 픽업하러 갈게요'
       },
       'in_progress': {
-        text: '영수증',
-        icon: '🔨',
+        text: '연마중',
+        icon: '/icons/Icon_Knife_Board.png',
         description: '장인이 칼을 연마하고 있어요',
         summary: '열심히도 달구시는 모습이 있어요'
       },
       'shipping': {
-        text: '영수증',
-        icon: '🚚',
+        text: '배송중',
+        icon: '/icons/Icon_Delivery.png',
         description: '칼이 배송중입니다!',
         summary: '날카롭게 다듬어진 칼이 빠르게 이동 중이에요 :)'
       },
       'completed': {
-        text: '영수증',
-        icon: '✅',
+        text: '완료',
+        icon: '/icons/Icon_Check.png',
         description: '칼갈이 완료!',
         summary: '날이 무뎌질때 바로 찾아 주세요!'
       },
       'cancelled': {
-        text: '영수증',
-        icon: '❌',
+        text: '취소',
+        icon: '/icons/Icon_Check.png',
         description: '예약이 취소되었습니다',
         summary: '예약이 취소되었습니다'
       }
     }
-    return statusMap[status] || { text: '영수증', icon: '🔪', description: status }
+    return statusMap[status] || { text: '영수증', icon: '/icons/status_default.png', description: status }
   }
 
   // 예약 데이터를 히스토리 아이템으로 변환
