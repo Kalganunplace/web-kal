@@ -1,7 +1,7 @@
 "use client"
 
 import BottomSheet from "@/components/ui/bottom-sheet"
-import { ChevronDownIcon, ChevronRightIcon } from "@/components/ui/icon"
+import { ChevronDownIcon } from "@/components/ui/icon"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, BodySmall, BodyXSmall, Heading3 } from "@/components/ui/typography"
 import { useUserBookings } from '@/hooks/queries/use-booking'
@@ -292,7 +292,7 @@ export default function UsageHistoryPage() {
             {/* Receipt Header */}
             <div className="flex justify-between items-center mb-2">
               <div className="flex items-center gap-2">
-                <img src="/icons/icon_receipt.png" alt="" className="w-5 h-5" />
+                <img src="/icons/file-check-02.png" alt="" className="w-5 h-5" />
                 <BodyMedium color="#333333">영수증</BodyMedium>
               </div>
               <BodyMedium color="#E67E22" className="font-bold">
@@ -683,13 +683,15 @@ export default function UsageHistoryPage() {
                   className="bg-white p-4 flex items-center gap-4 cursor-pointer"
                   onClick={() => handleItemClick(booking)}
                 >
-                  <div className="text-xl">{getStatusDisplay(booking.status).icon}</div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <BodySmall color="#333333">{booking.total_amount.toLocaleString()}원</BodySmall>
-                      <ChevronRightIcon size={20} className="text-[#767676]" />
+                  <div className="flex justify-between items-center w-full ">
+                    <div className="flex items-center gap-2">
+                      <img src="/icons/icon_knife.png" alt="" className="w-5 h-5" />
+                      <div className="flex flex-col gap-1">
+                        <BodySmall color="#333333">{booking.total_amount.toLocaleString()}원</BodySmall>
+                        <BodySmall color="#767676">{formatBookingItems(booking)}</BodySmall>
+                      </div>
                     </div>
-                    <BodyXSmall color="#767676">{formatBookingItems(booking)}</BodyXSmall>
+                    <img src="/icons/chevron-right-24.svg" alt="" className="w-5 h-5" />
                   </div>
                 </div>
 
