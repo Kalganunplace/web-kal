@@ -1,5 +1,6 @@
 "use client"
 
+import { Icon44 } from "@/components/icons"
 import TopBanner from "@/components/ui/top-banner"
 import { BodyMedium, Typography } from "@/components/ui/typography"
 import { useAuthActions } from "@/stores/auth-store"
@@ -82,9 +83,7 @@ export default function AppSettingsPage() {
 
             {/* 로그아웃 아이콘 */}
             <div className="flex justify-center">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center">
-                <div className="w-12 h-12 text-[#E67E22] text-2xl">🚪</div>
-              </div>
+              <Icon44 size={70} color="#E67E22"/>
             </div>
 
             {/* 구분선 */}

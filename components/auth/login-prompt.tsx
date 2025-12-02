@@ -2,15 +2,16 @@
 
 import { Button } from '@/components/ui/button'
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
 } from "@/components/ui/sheet"
 import { BodyMedium, Heading2 } from '@/components/ui/typography'
 import { useAuthHydration } from '@/hooks/use-auth-hydration'
 import { useRouter } from 'next/navigation'
+import { Icon04 } from '../icons'
 
 interface LoginPromptProps {
   title?: string
@@ -171,21 +172,24 @@ export function LoginBottomSheet({
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="bottom" className="max-w-[500px] mx-auto">
         <SheetHeader className="text-center pb-4">
-          <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-4 mx-auto">
-            <span className="text-2xl">🛡️</span>
-          </div>
           <SheetTitle className="text-xl font-bold">
-            {title || "로그인이 필요해요"}
+            {/* {title || "로그인이 필요해요"} */}
+            {"로그인이 필요해요"}
           </SheetTitle>
-          <SheetDescription className="text-gray-600 leading-relaxed">
-            {message || "이 기능을 사용하려면 로그인이 필요합니다."}
+          <div className='flex justify-center'>
+            <Icon04 size={70} color="#E67E22"/>
+          </div>
+          <SheetDescription className="text-[#333] text-base font-bold">
+            {/* {message || "이 기능을 사용하려면 로그인이 필요합니다."} */}
+            <p>간편하게 로그인하고</p>
+            <p>칼가는곳의 다양한 서비스를 이용해보세요!</p>
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex flex-col gap-3 pt-4">
           <Button
             onClick={handleLogin}
-            className="w-full h-12 bg-[#E67E22]  text-white font-bold rounded-xl"
+            className="w-full h-12 bg-[#E67E22]  text-white font-bold rounded-[8px]"
           >
             {actionText || "로그인하기"}
           </Button>
@@ -193,14 +197,14 @@ export function LoginBottomSheet({
           <Button
             onClick={handleSignup}
             variant="outline"
-            className="w-full h-12 border-orange-200 text-orange-600 hover:bg-orange-50 font-bold rounded-xl"
+            className="w-full h-12 border-orange-200 text-orange-600 font-bold rounded-[8px]"
           >
             회원가입하기
           </Button>
 
           <button
             onClick={onClose}
-            className="w-full py-3 text-gray-500 hover:text-gray-700 font-medium transition-colors"
+            className="w-full py-3 bg-[#F2F2F2] text-[#E67E22] rounded-[8px] font-bold transition-colors"
           >
             나중에 하기
           </button>
